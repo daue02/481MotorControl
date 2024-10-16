@@ -5,12 +5,13 @@
 
 // Create my motor objects
 StepperMotor motorY(3, 6, 200, 16, 1, 50, 50); // 40 32
-StepperMotor motorZ(4, 7, 200, 16, 1, 50, 50); // 50 50
+StepperMotor motorZ(4, 7, 200, 1, 1, 25, 2);   // 50 50
 
 // Create accelStepper motor objects
 AccelStepper stepperY(AccelStepper::DRIVER, motorY.stepPin, motorY.dirPin);
 AccelStepper stepperZ(AccelStepper::DRIVER, motorZ.stepPin, motorZ.dirPin);
 
+// Functions
 void Motor_Init(StepperMotor motor, AccelStepper &stepper)
 {
     int maxStepSpeed = motor.maxLinSpeed / motor.lead * motor.stepPerRev * motor.microstep;
@@ -40,6 +41,7 @@ void moveMotors(long y, long z)
 {
     stepperY.move(y);
     stepperY.runToPosition();
+
     stepperZ.move(z);
     stepperZ.runToPosition();
 }

@@ -7,6 +7,7 @@
 // Create state machine
 stateMachine state(false, 0, 0);
 
+// Functions
 double mm2steps(double mm, StepperMotor motor)
 {
     double steps = 0;
@@ -21,10 +22,10 @@ double steps2mm(double steps, StepperMotor motor)
     return mm;
 }
 
-double calculateRequiredSteps(double mm, StepperMotor motor)
+long calculateRequiredSteps(double mm, StepperMotor motor)
 {
     double desiredSteps = mm2steps(mm, motor);
-    long actualSteps = static_cast<int>(desiredSteps + (desiredSteps > 0 ? 0.5 : -0.5));
+    long actualSteps = static_cast<long>(desiredSteps + (desiredSteps > 0 ? 0.5 : -0.5));
     return actualSteps;
 }
 
@@ -36,8 +37,8 @@ double calculateRequiredSteps(double mm, StepperMotor motor)
  */
 void moveTo(double y, double z)
 {
-    long yStep = calculateRequiredSteps(y-state.yPos, motorY);
-    long zStep = calculateRequiredSteps(z-state.zPos, motorZ);
+    long yStep = calculateRequiredSteps(y - state.yPos, motorY);
+    long zStep = calculateRequiredSteps(z - state.zPos, motorZ);
 
     moveMotors(yStep, zStep);
 
@@ -56,10 +57,10 @@ void printState()
     Serial.println(state.homed);
 
     Serial.print("Y Pos [mm]: ");
-    Serial.println(state.yPos);
+    Serial.println(state.yPos,5);
 
-    Serial.print("Y Pos [mm]: ");
-    Serial.println(state.zPos);
+    Serial.print("Z Pos [mm]: ");
+    Serial.println(state.zPos,5);
 
     Serial.println("");
 }
