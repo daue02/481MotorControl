@@ -1,61 +1,60 @@
 #include <Arduino.h>
 #include <accelstepper.h>
+#include "motor_hal.h"
+#include "controls.h"
 
-// Define pin connections & motor's steps per revolution
-const int stepYPin = 3;
-const int dirYPin = 6;
+double receiveCoordinate(char axis)
+{
+  String input = ""; // Buffer to hold the serial input
+  double coordinate = 0.0;
 
-const int stepZPin = 4;
-const int dirZPin = 7;
+  // Prompt the user to enter the coordinate for the specified axis (Y or Z)
+  Serial.print("Enter ");
+  Serial.print(axis);
+  Serial.print(" coordinate: ");
 
-// Define drive ratios
-const int stepPerRevY = 200;
-const int microstepY = 16;
-const int leadY = 2; // in mm
+  // Wait for input from the user
+  while (Serial.available() == 0)
+  {
+    // Wait until data is available in the serial buffer
+  }
 
-const int stepPerRevZ = 200;
-const int microstepZ = 16;
-const int leadZ = 2; // in mm
+  // Read the input from the serial buffer
+  input = Serial.readStringUntil('\n');
+  input.trim(); // Remove any leading or trailing whitespace
 
-// Define performance criteria
-const int maxLinSpeedY = 40; // mm/s
-const int maxLinAccelY = 50; // mm/s^2
+  // Convert the input to a double
+  coordinate = input.toFloat();
 
-const int maxLinSpeedZ = 40; // mm/s
-const int maxLinAccelZ = 50; // mm/s^2
+  return coordinate; // Return the coordinate value
+}
 
-// Define max speeds
-const int maxStepSpeedY = maxLinSpeedY / leadY * stepPerRevY * microstepY; // step/s
-const int maxStepAccelY = maxLinAccelY / leadY * stepPerRevY * microstepY; // step/s^2
+// Main function to receive Y and Z coordinates
+void receiveCoordinates(double &yCoord, double &zCoord)
+{
+  // Receive Y coordinate
+  yCoord = receiveCoordinate('Y');
 
-const int maxStepSpeedZ = maxLinSpeedZ / leadZ * stepPerRevZ * microstepZ; // step/s
-const int maxStepAccelZ = maxLinAccelZ / leadZ * stepPerRevZ * microstepZ; // step/s^2
-
-// Create motor objects
-AccelStepper stepperY(AccelStepper::DRIVER, stepYPin, dirYPin);
-AccelStepper stepperZ(AccelStepper::DRIVER, stepZPin, dirZPin);
+  // Receive Z coordinate
+  zCoord = receiveCoordinate('Z');
+}
 
 void setup()
 {
-  stepperY.setMaxSpeed(maxStepSpeedY);
-  stepperY.setAcceleration(maxStepAccelY); // May not need here - not a max
+  delay(1000);
+  Serial.begin(9600);
+  Motors_Init();
 
-  stepperZ.setMaxSpeed(maxStepSpeedZ);
-  stepperZ.setAcceleration(maxStepAccelZ); // May not need here - not a max
+  double y = 0, z = 0;
 
-  stepperY.move(-3200); // Equivalent to 1 rotation CCW
-  stepperZ.move(3200);  // Equivalent to 1 rotation CW
+  while (1)
+  {
+    receiveCoordinates(y, z);
+    moveTo(y, z);
+    printState();
+  }
 }
 
 void loop()
 {
-  if (stepperY.distanceToGo() != 0)
-  {
-    stepperY.run(); // Step the motor one step
-  }
-
-  if (stepperZ.distanceToGo() != 0)
-  {
-    stepperZ.run(); // Step the motor one step
-  }
 }
