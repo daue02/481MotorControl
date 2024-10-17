@@ -9,9 +9,6 @@ void HMI_Init(void);
 static void TIM5_Init(void);
 void TIM5_IRQHandler(void);
 void buttonDebug(void);
-void Pot_Init(Pot *pot);
-void ADC_Init(void);
-void ADC_Select_Channel(uint32_t channel);
 
 buttonLED greenLED =
     {
@@ -33,7 +30,7 @@ buttonLED redLED =
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
-// For TIM5 interrupt
+// For tim5 interrupt
 buttonLED activeLED =
     {
         .mode = GPIO_MODE_OUTPUT_PP,
@@ -71,42 +68,6 @@ buttonLED autoManButton =
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
-Pot yPot =
-    {
-        .name = "xPot",
-        .port = GPIOA,
-        .pin = GPIO_PIN_4,
-        .mode = GPIO_MODE_ANALOG,
-        .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_4};
-
-Pot xPot =
-    {
-        .name = "yPot",
-        .port = GPIOA,
-        .pin = GPIO_PIN_1,
-        .mode = GPIO_MODE_ANALOG,
-        .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_1};
-
-Pot zPot =
-    {
-        .name = "zPot",
-        .port = GPIOB,
-        .pin = GPIO_PIN_0,
-        .mode = GPIO_MODE_ANALOG,
-        .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_8};
-
-buttonLED gripButton = {
-    .name = "gripButton",
-    .port = GPIOA,
-    .pin = GPIO_PIN_0,
-    .mode = GPIO_MODE_INPUT,
-    .pull = GPIO_NOPULL,
-    .speed = GPIO_SPEED_FREQ_LOW,
-};
-
 /**
  * @brief Initializes the pins and state of the buttons/LEDs
  *
@@ -127,23 +88,6 @@ void buttonLED_Init(buttonLED *butLED)
 }
 
 /**
- * @brief Initializes a potentiometer
- *
- * @param pot Potentiometer object
- */
-void Pot_Init(Pot *pot)
-{
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = pot->pin;
-    GPIO_InitStruct.Mode = pot->mode;
-    GPIO_InitStruct.Pull = pot->pull;
-    HAL_GPIO_Init(pot->port, &GPIO_InitStruct);
-
-    pot->alpha = 0.1;
-}
-
-/**
  * @brief Initializes all HMI components, to be used in main
  *
  */
@@ -156,129 +100,6 @@ void HMI_Init(void)
     buttonLED_Init(&homeButton);
     buttonLED_Init(&runTestButton);
     buttonLED_Init(&autoManButton);
-    buttonLED_Init(&gripButton);
-
-    // Pots
-    Pot_Init(&xPot);
-    Pot_Init(&yPot);
-    Pot_Init(&zPot);
-    ADC_Init();
-
-    zPot.max = 550;
-    zPot.min = 5;
-    zPot.slope = ((motorz.thetaMax - Z_SAFETY_MARGIN) - (motorz.thetaMin + Z_SAFETY_MARGIN)) / (zPot.max - zPot.min);
-    zPot.b = (motorz.thetaMax - Z_SAFETY_MARGIN) - (zPot.slope * zPot.max);
-
-    readAndFilter(&xPot);
-    readAndFilter(&yPot);
-    readAndFilter(&zPot);
-}
-
-/**
- * @brief Initialized the ADC peripheral
- *
- */
-void ADC_Init(void)
-{
-    __HAL_RCC_ADC1_CLK_ENABLE();
-
-    hadc1.Instance = ADC1;
-    hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-    hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-    hadc1.Init.ScanConvMode = DISABLE;
-    hadc1.Init.ContinuousConvMode = DISABLE;
-    hadc1.Init.DiscontinuousConvMode = DISABLE;
-    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-    hadc1.Init.NbrOfConversion = 1;
-    hadc1.Init.DMAContinuousRequests = DISABLE;
-    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-    if (HAL_ADC_Init(&hadc1) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = ADC_CHANNEL_1;
-    sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-}
-
-/**
- * @brief Sets the channel for the ADC read
- *
- * @param channel ADC channel
- */
-void ADC_Select_Channel(uint32_t channel)
-{
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = channel;
-    sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-}
-
-/**
- * @brief Performs an analog read of a pot.
- *
- * @param pot Pot object
- * @return uint32_t analog read value
- */
-uint32_t Read_Pot(Pot *pot)
-{
-    ADC_Select_Channel(pot->channel);
-    HAL_Delay(1);
-
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
-    {
-        return HAL_ADC_GetValue(&hadc1);
-    }
-    return 0; // Return 0 if failed
-}
-
-/**
- * @brief Reads the value of a potentiometer and low pass filters the value.
- *
- * @param pot Potentiometer object
- */
-void readAndFilter(Pot *pot)
-{
-    pot->value = Read_Pot(pot);
-    if (!pot->filtered)
-    {
-        pot->filtered = pot->value;
-    }
-    else
-    {
-        // Low pass filter
-        pot->filtered = pot->filtered + (((pot->value - pot->filtered) * pot->alpha));
-
-        // Calculate Z Pos
-        if (pot->name == zPot.name)
-        {
-            // Determine desired Z position
-            zPot.pos = motorz.thetaMax - (zPot.slope * zPot.filtered + zPot.b);
-
-            // Ensure desired position is within limits
-            if (zPot.pos > (motorz.thetaMax - Z_SAFETY_MARGIN))
-            {
-                zPot.pos = (motorz.thetaMax - Z_SAFETY_MARGIN) - 1;
-            }
-            else if (zPot.pos < (motorz.thetaMin + Z_SAFETY_MARGIN))
-            {
-                zPot.pos = (motorz.thetaMin + Z_SAFETY_MARGIN) + 1;
-            }
-        }
-    }
 }
 
 static void TIM5_Init(void)

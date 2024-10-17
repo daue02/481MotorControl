@@ -13,9 +13,8 @@ typedef struct
     GPIO_PinState Pin_n_state;
 } LimitSwitch;
 
-extern LimitSwitch theta1SW;
-extern LimitSwitch theta2SW;
-extern LimitSwitch thetazSW;
+extern LimitSwitch ySW;
+extern LimitSwitch zSW;
 
 void Limit_Switch_Init(void);
 
