@@ -15,10 +15,10 @@ void TIM4_IRQHandler(void);
 // Motor Objects
 Motor motorY = {
     .name = "motorY",
-    .stepPort = GPIOA,      // D2-PA10
-    .stepPin = GPIO_PIN_10, // D2-PA10
+    .stepPort = GPIOB,      // D2-PA10
+    .stepPin = GPIO_PIN_4, // D2-PA10
     .dirPort = GPIOB,       // D5-PB4
-    .dirPin = GPIO_PIN_4,   // D5-PB4
+    .dirPin = GPIO_PIN_5,   // D5-PB4
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // NEED TO UPDATE
@@ -31,7 +31,7 @@ Motor motorZ = {
     .name = "motorZ",
     .stepPort = GPIOB,     // D3-PB3
     .stepPin = GPIO_PIN_3, // D3-PB3
-    .dirPort = GPIOB,      // D6-PB10
+    .dirPort = GPIOA,      // D6-PB10
     .dirPin = GPIO_PIN_10, // D6-PB10
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping

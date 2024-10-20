@@ -31,9 +31,12 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   Motors_Init();
-  Limit_Switch_Init();
-  HMI_Init();
+  // Limit_Switch_Init();
+  // HMI_Init();
 
+  printf("Test");
+
+  /*
   updateStateMachine("Unhomed");
 
   SystemHealthCheck();
@@ -51,7 +54,9 @@ int main(void)
   // Need to create some sort of serial demo
   while (1)
   {
+    HAL_Delay(1);
   }
+  */
 }
 
 /**
