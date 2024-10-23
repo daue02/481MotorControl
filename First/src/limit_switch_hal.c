@@ -61,7 +61,6 @@ void Limit_Switch_Init(void)
  */
 void EXTI9_5_IRQHandler(void)
 {
-
     GPIO_PinState yPin_p_state = HAL_GPIO_ReadPin(ySW.port, ySW.Pin_p);
     GPIO_PinState yPin_n_state = HAL_GPIO_ReadPin(ySW.port, ySW.Pin_n);
 

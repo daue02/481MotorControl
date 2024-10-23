@@ -12,13 +12,15 @@ static void TIM4_Init(void);
 void TIM3_IRQHandler(void);
 void TIM4_IRQHandler(void);
 
+// #define TIM3_DEBUG // See 20241022 OneNote for purpose
+
 // Motor Objects
 Motor motorY = {
     .name = "motorY",
-    .stepPort = GPIOB,      // D2-PA10
-    .stepPin = GPIO_PIN_4, // D2-PA10
-    .dirPort = GPIOB,       // D5-PB4
-    .dirPin = GPIO_PIN_5,   // D5-PB4
+    .stepPort = GPIOB,
+    .stepPin = GPIO_PIN_4,
+    .dirPort = GPIOB,
+    .dirPin = GPIO_PIN_5,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // NEED TO UPDATE
@@ -29,10 +31,10 @@ Motor motorY = {
 
 Motor motorZ = {
     .name = "motorZ",
-    .stepPort = GPIOB,     // D3-PB3
-    .stepPin = GPIO_PIN_3, // D3-PB3
-    .dirPort = GPIOA,      // D6-PB10
-    .dirPin = GPIO_PIN_10, // D6-PB10
+    .stepPort = GPIOB,
+    .stepPin = GPIO_PIN_3,
+    .dirPort = GPIOA,
+    .dirPin = GPIO_PIN_10,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // NEED TO UPDATE
@@ -75,6 +77,11 @@ void Motors_Init(void)
 
     motorY.limitSwitch = ySW;
     motorZ.limitSwitch = zSW;
+
+#ifdef TIM3_DEBUG
+    printf("----------\n\r");
+    printf("Motors Initialized\n\r");
+#endif
 }
 
 /**
@@ -87,7 +94,6 @@ void Motors_Init(void)
  */
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {
-    motor->isMoving = 1;
     if (dist > 0)
     {
         HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
@@ -102,6 +108,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     // Gain scheduling setup
     motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev);
+    /*
     // Speed up for first 1/4 steps
     motor->stepsToSpeedUp = 3.0 / 4.0 * motor->stepsToComplete;
     // Slow down for last 1/4 steps
@@ -109,10 +116,15 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     // RPM delta per step
     motor->slope = (speedRPM - MIN_RPM) / (motor->stepsToSlowDown);
     // Start at the min rpm
-    motor->currentRPM = MIN_RPM;
+    */
+    motor->currentRPM = 250;
 
     float timePerStep = 60.0 / (motor->currentRPM * motor->stepsPerRev); // Time per step in seconds
     uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1;  // Time per toggle, in microseconds
+#ifdef TIM3_DEBUG
+    printf("Move Requested: Y timer period: %d us\n\r", timerPeriod);
+#endif
+    motor->isMoving = 1;
 
     double distToComplete = motor->stepsToComplete / motor->stepsPerRev * motor->lead;
     if (motor->dir == CW)
@@ -124,11 +136,19 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim3);
+        while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY)
+        {
+            // Wait for the timer to be fully initialized. Fixed 2024-10-23
+        }
     }
     else if (motor->name == motorZ.name)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim4);
+        while (HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
+        {
+            // Wait for the timer to be fully initialized. Fixed 2024-10-23
+        }
     }
 
     return distToComplete;
@@ -136,12 +156,17 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
 void StepMotor(Motor *motor)
 {
-    // IsMoving will be set to 0 if a limit switch is engaged
+#ifdef TIM3_DEBUG
+    printf("Running 'StepMotor': stepsToComplete: %d, isMoving: %d\n\r", motor->stepsToComplete, motor->isMoving);
+#endif
     if (!motor->stepsToComplete || !motor->isMoving)
     {
         if (motor->name == motorY.name)
         {
             HAL_TIM_Base_Stop_IT(&htim3);
+#ifdef TIM3_DEBUG
+            printf("Stopped Timer - Stepping Complete / isMoving=0\n\r");
+#endif
         }
         else if (motor->name == motorZ.name)
         {
@@ -149,15 +174,16 @@ void StepMotor(Motor *motor)
         }
         motor->isMoving = 0;
     }
-
     HAL_GPIO_TogglePin(motor->stepPort, motor->stepPin);
     motor->stepsToComplete--;
+#ifdef TIM3_DEBUG
+    printf("'StepMotor' Complete\n\r");
+#endif
 }
 
 static void TIM3_Init(void)
 {
     __HAL_RCC_TIM3_CLK_ENABLE();
-
     htim3.Instance = TIM3;
     htim3.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1); // 1 MHz clock
     htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -167,16 +193,29 @@ static void TIM3_Init(void)
 
     HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
+
+#ifdef TIM3_DEBUG
+    printf("TIM3 Initialized\n\r");
+#endif
 }
 
 void TIM3_IRQHandler(void)
 {
+#ifdef TIM3_DEBUG
+    printf("Entered TIM3 IRQ\n\r");
+#endif
     if (__HAL_TIM_GET_FLAG(&htim3, TIM_FLAG_UPDATE) != RESET)
     {
         if (__HAL_TIM_GET_IT_SOURCE(&htim3, TIM_IT_UPDATE) != RESET)
         {
             __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+#ifdef TIM3_DEBUG
+            printf("TIM3 Counter: %lu\n\r", __HAL_TIM_GET_COUNTER(&htim3));
+#endif
             StepMotor(&motorY);
+#ifdef TIM3_DEBUG
+            printf("Cleared TIM3 IRQ\n\r");
+#endif
         }
     }
 }

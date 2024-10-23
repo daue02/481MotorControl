@@ -3,8 +3,6 @@
 #include "limit_switch_hal.h"
 #include "hmi_hal.h"
 
-// #define DEBUG // Enables serial print statements
-
 void PrintState()
 {
     printf("Robot State:\n\r");
@@ -25,15 +23,31 @@ void PrintState()
  */
 void MoveTo(double y, double z)
 {
-    // Calculate required move
-    double mdeltaY = y - state.y;
-    double mdeltaZ = z - state.z;
+    double deltaY = fabs(y - state.y);
+    double mdeltaY = 0;
+    double deltaZ = fabs(z - state.z);
+    double mdeltaZ = 0;
 
-    // Move the motors
-    mdeltaY = MoveByDist(&motorY, mdeltaY, 20);
-    mdeltaZ = MoveByDist(&motorZ, mdeltaZ, 20);
+    if (y >= state.y)
+    {
+        mdeltaY = MoveByDist(&motorY, deltaY, 100);
+    }
+    else if (y < state.y)
+    {
+        deltaY = deltaY * -1;
+        mdeltaY = MoveByDist(&motorY, deltaY, 100);
+    }
 
-    // Update the state machine
+    if (z >= state.z)
+    {
+        mdeltaZ = MoveByDist(&motorZ, deltaZ, 100);
+    }
+    else if (z < state.z)
+    {
+        deltaZ = deltaZ * -1;
+        mdeltaZ = MoveByDist(&motorZ, deltaZ, 100);
+    }
+
     state.y += mdeltaY;
     state.z += mdeltaZ;
 }

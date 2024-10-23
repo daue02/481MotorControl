@@ -3,13 +3,10 @@
 #include "hmi_hal.h"
 #include "motor_hal.h"
 #include "limit_switch_hal.h"
-#include "stdbool.h"
 
-#define DEBUG                // Enables serial print statements
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
-UART_HandleTypeDef huart2;
 
 struct stateMachine state = {0};
 
@@ -22,7 +19,6 @@ void SystemHealthCheck(void);
 
 int main(void)
 {
-  // Initialize everything
   HAL_Init();
   SystemClockConfig();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -34,7 +30,9 @@ int main(void)
   // Limit_Switch_Init();
   // HMI_Init();
 
-  printf("Test");
+  // updateStateMachine("Unhomed");
+  //  SystemHealthCheck();
+  MoveTo(10, 10);
 
   /*
   updateStateMachine("Unhomed");
@@ -58,6 +56,20 @@ int main(void)
   }
   */
 }
+
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+
+PUTCHAR_PROTOTYPE
+{
+  HAL_UART_Transmit(&UartHandle, (uint8_t *)&ch, 1, 0xFFFF);
+  return ch;
+}
+
+//
 
 /**
  * @brief Configures the clock settings.
