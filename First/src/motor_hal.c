@@ -11,8 +11,7 @@ static void TIM3_Init(void);
 static void TIM4_Init(void);
 void TIM3_IRQHandler(void);
 void TIM4_IRQHandler(void);
-
-// #define TIM3_DEBUG // See 20241022 OneNote for purpose
+uint32_t CalculateMotorSpeed(Motor *motor);
 
 // Motor Objects
 Motor motorY = {
@@ -37,7 +36,7 @@ Motor motorZ = {
     .dirPin = GPIO_PIN_10,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
-    .lead = 1,           // NEED TO UPDATE
+    .lead = 1,           // Actual: 5mm
     .posMin = -200,
     .posMax = 100,
     .isMoving = 0,
@@ -77,11 +76,6 @@ void Motors_Init(void)
 
     motorY.limitSwitch = ySW;
     motorZ.limitSwitch = zSW;
-
-#ifdef TIM3_DEBUG
-    printf("----------\n\r");
-    printf("Motors Initialized\n\r");
-#endif
 }
 
 /**
@@ -106,27 +100,14 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
         dist = dist * -1;
     }
 
-    // Gain scheduling setup
-    motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev);
-    /*
-    // Speed up for first 1/4 steps
-    motor->stepsToSpeedUp = 3.0 / 4.0 * motor->stepsToComplete;
-    // Slow down for last 1/4 steps
-    motor->stepsToSlowDown = 1.0 / 4.0 * motor->stepsToComplete;
-    // RPM delta per step
-    motor->slope = (speedRPM - MIN_RPM) / (motor->stepsToSlowDown);
-    // Start at the min rpm
-    */
-    motor->currentRPM = 250;
-
-    float timePerStep = 60.0 / (motor->currentRPM * motor->stepsPerRev); // Time per step in seconds
-    uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1;  // Time per toggle, in microseconds
-#ifdef TIM3_DEBUG
-    printf("Move Requested: Y timer period: %d us\n\r", timerPeriod);
-#endif
+    motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Divide by 2, since each interrupt is a toggle
+    motor->accelStep = motor->stepsToComplete * 3 / 4;                                // Spend the first 1/4 of time accelerating
+    motor->decelStep = motor->stepsToComplete / 4;                                    // Spend the last 1/4 of time decelerating
+    motor->targetRPM = speedRPM;
+    uint32_t timerPeriod = CalculateMotorSpeed(motor);
     motor->isMoving = 1;
 
-    double distToComplete = motor->stepsToComplete / motor->stepsPerRev * motor->lead;
+    double distToComplete = motor->stepsToComplete / motor->stepsPerRev * motor->lead / 2;
     if (motor->dir == CW)
     {
         distToComplete = distToComplete * -1;
@@ -136,19 +117,24 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim3);
-        while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY)
-        {
-            // Wait for the timer to be fully initialized. Fixed 2024-10-23
-        }
+        // while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY)
+        // {
+        //     // Wait for the timer to be fully initialized. Fixed 2024-10-23
+        // }
     }
     else if (motor->name == motorZ.name)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim4);
-        while (HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
-        {
-            // Wait for the timer to be fully initialized. Fixed 2024-10-23
-        }
+        // while (HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
+        // {
+        //     // Wait for the timer to be fully initialized. Fixed 2024-10-23
+        // }
+    }
+
+    while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY && HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
+    {
+        // Wait for both timers to be fully initialized. Fixed 2024-10-23
     }
 
     return distToComplete;
@@ -156,17 +142,11 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
 void StepMotor(Motor *motor)
 {
-#ifdef TIM3_DEBUG
-    printf("Running 'StepMotor': stepsToComplete: %d, isMoving: %d\n\r", motor->stepsToComplete, motor->isMoving);
-#endif
     if (!motor->stepsToComplete || !motor->isMoving)
     {
         if (motor->name == motorY.name)
         {
             HAL_TIM_Base_Stop_IT(&htim3);
-#ifdef TIM3_DEBUG
-            printf("Stopped Timer - Stepping Complete / isMoving=0\n\r");
-#endif
         }
         else if (motor->name == motorZ.name)
         {
@@ -176,9 +156,6 @@ void StepMotor(Motor *motor)
     }
     HAL_GPIO_TogglePin(motor->stepPort, motor->stepPin);
     motor->stepsToComplete--;
-#ifdef TIM3_DEBUG
-    printf("'StepMotor' Complete\n\r");
-#endif
 }
 
 static void TIM3_Init(void)
@@ -193,29 +170,18 @@ static void TIM3_Init(void)
 
     HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
-
-#ifdef TIM3_DEBUG
-    printf("TIM3 Initialized\n\r");
-#endif
 }
 
 void TIM3_IRQHandler(void)
 {
-#ifdef TIM3_DEBUG
-    printf("Entered TIM3 IRQ\n\r");
-#endif
     if (__HAL_TIM_GET_FLAG(&htim3, TIM_FLAG_UPDATE) != RESET)
     {
         if (__HAL_TIM_GET_IT_SOURCE(&htim3, TIM_IT_UPDATE) != RESET)
         {
             __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
-#ifdef TIM3_DEBUG
-            printf("TIM3 Counter: %lu\n\r", __HAL_TIM_GET_COUNTER(&htim3));
-#endif
             StepMotor(&motorY);
-#ifdef TIM3_DEBUG
-            printf("Cleared TIM3 IRQ\n\r");
-#endif
+            uint32_t timerPeriod = CalculateMotorSpeed(&motorY);
+            __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
         }
     }
 }
@@ -243,8 +209,37 @@ void TIM4_IRQHandler(void)
         {
             __HAL_TIM_CLEAR_IT(&htim4, TIM_IT_UPDATE);
             StepMotor(&motorZ);
+            uint32_t timerPeriod = CalculateMotorSpeed(&motorZ);
+            __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
         }
     }
+}
+
+/**
+ * @brief Motor acceleration / deceleration copntrol
+ *
+ * @param motor Motor to move
+ * @return current timer period to achieve accel/decel/RPM
+ */
+uint32_t CalculateMotorSpeed(Motor *motor)
+{
+    if (motor->stepsToComplete > motor->accelStep)
+    {
+        double slope = 1.0 - ((double)(motor->stepsToComplete - motor->accelStep) / (motor->accelStep / 3.0));
+        motor->currentRPM = MIN_RPM + slope * (motor->targetRPM - MIN_RPM);
+        // printf("Slope: %d || RPM: %d\n",(int)slope,(int)motor->currentRPM);
+    }
+    else if (motor->stepsToComplete < motor->decelStep)
+    {
+        double slope = ((double)motor->decelStep - motor->stepsToComplete) / motor->decelStep;
+        motor->currentRPM = motor->targetRPM - slope * (motor->targetRPM - MIN_RPM);
+        // printf("Slope: %d || RPM: %d\n",(int)slope,(int)motor->currentRPM);
+    }
+
+    float timePerStep = 60.0 / (motor->currentRPM * motor->stepsPerRev); // Time per step in seconds
+    uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1;  // Time per toggle, in microseconds
+
+    return timerPeriod;
 }
 
 /**
@@ -264,7 +259,7 @@ void StopMotors(void)
 /*
 void HomeMotors(void)
 {
-    printf("Homing...\n\r");
+    printf("Homing...\n");
     updateStateMachine("Homing");
 
     MoveByAngle(&motor1, 8.0, 5.0);

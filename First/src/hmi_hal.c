@@ -204,11 +204,11 @@ void readDigitalPinState(buttonLED butLED)
 
     if (button_state == GPIO_PIN_SET)
     {
-        printf("%s INACTIVE\n\r", button_name);
+        printf("%s INACTIVE\n", button_name);
     }
     else if (button_state == GPIO_PIN_RESET)
     {
-        printf("%s ACTIVE\n\r", button_name);
+        printf("%s ACTIVE\n", button_name);
     }
 }
 
@@ -223,7 +223,7 @@ void buttonDebug(void)
         readDigitalPinState(homeButton);
         readDigitalPinState(runTestButton);
         readDigitalPinState(autoManButton);
-        printf("\n\r");
+        printf("\n");
         HAL_Delay(2000);
     }
 }

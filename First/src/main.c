@@ -7,6 +7,7 @@
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
+UART_HandleTypeDef huart2;
 
 struct stateMachine state = {0};
 
@@ -28,11 +29,12 @@ int main(void)
   Serial_Init();
   Motors_Init();
   // Limit_Switch_Init();
-  // HMI_Init();
+  //  HMI_Init();
 
   // updateStateMachine("Unhomed");
   //  SystemHealthCheck();
-  MoveTo(10, 10);
+
+  SerialDemo();
 
   /*
   updateStateMachine("Unhomed");
@@ -40,7 +42,7 @@ int main(void)
   SystemHealthCheck();
 
   // Wait for the home button to be pushed
-  printf("Waiting to home...\n\r");
+  printf("Waiting to home...\n");
   while (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin))
   {
     HAL_Delay(1);
@@ -209,10 +211,12 @@ double ReceiveFloat(void)
  */
 void RecieveCoordinates(double *y, double *z)
 {
-  printf("Enter desired Y coordinate [mm]: \n\r");
+  printf("Enter desired Y coordinate [mm]: \n");
   *y = ReceiveFloat();
-  printf("Enter desired Z coordinate [mm]: \n\r");
+  printf("\n");
+  printf("Enter desired Z coordinate [mm]: \n");
   *z = ReceiveFloat();
+  printf("\n");
 }
 
 /**
@@ -221,6 +225,17 @@ void RecieveCoordinates(double *y, double *z)
  */
 void SerialDemo(void)
 {
+  printf("---------- Entered Serial Demo ----------\n");
+  while (1)
+  {
+    double y = 0, z = 0;
+    RecieveCoordinates(&y, &z);
+    MoveTo(y, z, 250.0, 250.0);
+    while (motorY.isMoving|| motorZ.isMoving)
+    {
+      HAL_Delay(1); // Prevent user from sending another request while still moving
+    }
+  }
 }
 
 /**
@@ -232,31 +247,31 @@ void SystemHealthCheck(void)
   // Check that all limit switches are closed (NC switched).
   if (ySW.Pin_p_state)
   {
-    printf("Error: check Y+ sw\n\r");
+    printf("Error: check Y+ sw\n");
   }
   else if (ySW.Pin_n_state)
   {
-    printf("Error: check Y- sw\n\r");
+    printf("Error: check Y- sw\n");
   }
   else if (zSW.Pin_p_state)
   {
-    printf("Error: check Z+ sw\n\r");
+    printf("Error: check Z+ sw\n");
   }
   else if (zSW.Pin_n_state)
   {
-    printf("Error: check Z- sw\n\r");
+    printf("Error: check Z- sw\n");
   }
   else if (!homeButton.pin_state)
   {
-    printf("Error: Check home button\n\r");
+    printf("Error: Check home button\n");
   }
   else if (!runTestButton.pin_state)
   {
-    printf("Error: Check runTest button\n\r");
+    printf("Error: Check runTest button\n");
   }
   else if (!autoManButton.pin_state)
   {
-    printf("Error: Check autoMan button\n\r");
+    printf("Error: Check autoMan button\n");
   }
   else
   {

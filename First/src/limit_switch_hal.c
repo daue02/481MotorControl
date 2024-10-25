@@ -53,6 +53,7 @@ void Limit_Switch_Init(void)
     // Enable and set EXTI line Interrupt to the given priority
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    printf("LS Initialized\n");
 }
 
 /**
@@ -74,16 +75,16 @@ void EXTI9_5_IRQHandler(void)
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
             motorY.isMoving = 0;
-            printf("Y+ Engaged\n\r");
+            printf("Y+ Engaged\n");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-            printf("Y+ Disengaged\n\r");
+            printf("Y+ Disengaged\n");
         }
-        ySW.Pin_p_state = yPin_p_state;
         HAL_GPIO_EXTI_IRQHandler(ySW.Pin_p);
+        ySW.Pin_p_state = yPin_p_state;
     }
     else if (ySW.Pin_n_state != yPin_n_state)
     {
@@ -92,16 +93,16 @@ void EXTI9_5_IRQHandler(void)
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
             motorY.isMoving = 0;
-            printf("Y- Engaged\n\r");
+            printf("Y- Engaged\n");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-            printf("Y- Disengaged\n\r");
+            printf("Y- Disengaged\n");
         }
-        ySW.Pin_n_state = yPin_n_state;
         HAL_GPIO_EXTI_IRQHandler(ySW.Pin_n);
+        ySW.Pin_n_state = yPin_n_state;
     }
 
     if (zSW.Pin_p_state != zPin_p_state)
@@ -111,16 +112,16 @@ void EXTI9_5_IRQHandler(void)
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
             motorZ.isMoving = 0;
-            printf("Z+ Engaged\n\r");
+            printf("Z+ Engaged\n");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-            printf("Z+ Disengaged\n\r");
+            printf("Z+ Disengaged\n");
         }
-        zSW.Pin_p_state = zPin_p_state;
         HAL_GPIO_EXTI_IRQHandler(zSW.Pin_p);
+        zSW.Pin_p_state = zPin_p_state;
     }
     else if (zSW.Pin_n_state != zPin_n_state)
     {
@@ -129,15 +130,15 @@ void EXTI9_5_IRQHandler(void)
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
             motorZ.isMoving = 0;
-            printf("Z- Engaged\n\r");
+            printf("Z- Engaged\n");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-            printf("Z- Disengaged\n\r");
+            printf("Z- Disengaged\n");
         }
-        zSW.Pin_n_state = zPin_n_state;
         HAL_GPIO_EXTI_IRQHandler(zSW.Pin_n);
+        zSW.Pin_n_state = zPin_n_state;
     }
 }

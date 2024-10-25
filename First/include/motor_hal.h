@@ -6,9 +6,7 @@
 #include "limit_switch_hal.h"
 #include "stm32f4xx_hal_tim.h"
 
-#define STEPS_PER_REV 6400.0
 #define MIN_RPM 5.0
-#define MAX_RPM 100.0
 
 #define CW 0
 #define CCW 1
@@ -26,10 +24,11 @@ typedef struct
     double posMax;            // Positive limit switch position
     double posMin;            // Negative limit switch position
     uint32_t stepsToComplete; // Number of steps the motor has left to complete
-    uint32_t stepsToSpeedUp;  // How many steps the motor has to ramp up speed
-    uint32_t stepsToSlowDown; // How many steps the motor has to ramp down speed
+    uint32_t accelStep;       // stepsToComplete when motor finishes accelerating
+    uint32_t decelStep;       // stepsToComplete when motor begins decelerating
     double slope;             // The slope betweent the min and target speed
     double currentRPM;        // The motors current rpm
+    double targetRPM;         // The steady-state target rpm
     bool isMoving;            // Is the motor moving?
     LimitSwitch limitSwitch;  // Limit switch associated with the motor
 } Motor;

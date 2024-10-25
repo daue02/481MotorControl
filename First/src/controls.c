@@ -3,16 +3,26 @@
 #include "limit_switch_hal.h"
 #include "hmi_hal.h"
 
-void PrintState()
+/**
+ * @brief Prints state machine vrbs.
+ *
+ * @param posOnly True if you only want YZ pos
+ */
+void PrintState(bool posOnly)
 {
-    printf("Robot State:\n\r");
-    printf("Faulted: %s\n\r", state.faulted ? "Yes" : "No");
-    printf("Homed: %s\n\r", state.homed ? "Yes" : "No");
-    printf("Homing: %s\n\r", state.homing ? "Yes" : "No");
-    printf("Positioning: %s\n\r", state.positioning ? "Yes" : "No");
-    printf("Drilling: %s\n\r", state.drilling ? "Yes" : "No");
+    printf("\n");
+    if (!posOnly)
+    {
+        printf("Robot State:\n");
+        printf("Faulted: %s\n", state.faulted ? "Yes" : "No");
+        printf("Homed: %s\n", state.homed ? "Yes" : "No");
+        printf("Homing: %s\n", state.homing ? "Yes" : "No");
+        printf("Positioning: %s\n", state.positioning ? "Yes" : "No");
+        printf("Drilling: %s\n", state.drilling ? "Yes" : "No");
+    }
     printf("Current YZ Pos [mm]: ");
     PrintCartesianCoords(state.y, state.z);
+    printf("\n");
 }
 
 /**
@@ -20,8 +30,10 @@ void PrintState()
  *
  * @param y coordniate.
  * @param z coordinate.
+ * @param yRPM motor speed
+ * @param zRPM motor speed
  */
-void MoveTo(double y, double z)
+void MoveTo(double y, double z, double yRPM, double zRPM)
 {
     double deltaY = fabs(y - state.y);
     double mdeltaY = 0;
@@ -30,26 +42,27 @@ void MoveTo(double y, double z)
 
     if (y >= state.y)
     {
-        mdeltaY = MoveByDist(&motorY, deltaY, 100);
+        mdeltaY = MoveByDist(&motorY, deltaY, yRPM);
     }
     else if (y < state.y)
     {
         deltaY = deltaY * -1;
-        mdeltaY = MoveByDist(&motorY, deltaY, 100);
+        mdeltaY = MoveByDist(&motorY, deltaY, yRPM);
     }
 
     if (z >= state.z)
     {
-        mdeltaZ = MoveByDist(&motorZ, deltaZ, 100);
+        mdeltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
     }
     else if (z < state.z)
     {
         deltaZ = deltaZ * -1;
-        mdeltaZ = MoveByDist(&motorZ, deltaZ, 100);
+        mdeltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
     }
 
     state.y += mdeltaY;
     state.z += mdeltaZ;
+    PrintState(true);
 }
 
 /**
@@ -57,13 +70,15 @@ void MoveTo(double y, double z)
  *
  * @param rel_y y increment.
  * @param rel_z z increment
+ * @param yRPM motor speed
+ * @param zRPM motor speed
  */
-void MoveBy(double rel_y, double rel_z)
+void MoveBy(double rel_y, double rel_z, double yRPM, double zRPM)
 {
     double new_y = state.y + rel_y;
     double new_z = state.z + rel_z;
 
-    MoveTo(new_y, new_z);
+    MoveTo(new_y, new_z, yRPM, zRPM);
 }
 
 /**
@@ -79,7 +94,7 @@ void PrintCartesianCoords(double y, double z)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    printf("(%d.%d, %d.%d)\n\r", int_part, decimal_part, int_part2, decimal_part2);
+    printf("(%d.%d, %d.%d)\n", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**

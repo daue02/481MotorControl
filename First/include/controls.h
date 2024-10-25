@@ -31,8 +31,8 @@ struct stateMachine
 
 extern struct stateMachine state;
 
-void MoveTo(double y, double z);
-void MoveBy(double rel_y, double rel_z);
+void MoveTo(double y, double z, double yRPM, double zRPM);
+void MoveBy(double rel_y, double rel_z, double yRPM, double zRPM);
 void PrintCartesianCoords(double y, double z);
 void updateStateMachine(const char *toState);
 
