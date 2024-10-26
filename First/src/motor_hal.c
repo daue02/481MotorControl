@@ -256,35 +256,29 @@ void StopMotors(void)
  * @brief Homes the motors.
  *
  */
-/*
 void HomeMotors(void)
 {
     printf("Homing...\n");
     updateStateMachine("Homing");
 
-    MoveByAngle(&motor1, 8.0, 5.0);
-    MoveByAngle(&motor2, 8.0, 5.0);
-
-    while (motor1.isMoving || motor2.isMoving)
+    // Move full left/up until LS contact
+    MoveTo(motorY.posMin, motorZ.posMin, 120, 120);
+    while (motorY.isMoving || motorZ.isMoving)
     {
         HAL_Delay(1);
     }
     HAL_Delay(1000);
 
-    // Move back 6 degrees
-    double theta1 = MoveByAngle(&motor1, -6.0 / 180.0 * M_PI, 1.0);
-    double theta2 = MoveByAngle(&motor2, -6.0 / 180.0 * M_PI, 1.0);
-
-    while (motor1.isMoving || motor2.isMoving)
+    // Move right/down by 5mm
+    MoveBy(-1 * (motorY.posMax - motorY.posMin), -1 * (motorZ.posMax - motorZ.posMin), 250, 250);
+    while (motorY.isMoving || motorZ.isMoving)
     {
         HAL_Delay(1);
     }
 
     // Update the state machine
-    updateStateMachine("Auto Wait");
-    state.theta1 = motor1.thetaMax + theta1;
-    state.theta2 = motor2.thetaMax + theta2;
-    CalculateCartesianCoords(state.theta1, state.theta2, &state.x, &state.y);
-    printf("Current Coords in x-y:");
-    PrintCaresianCoords(state.x, state.y);
-*/
+    updateStateMachine("Idle");
+    state.y = motorY.posMin + 5;
+    state.z = motorZ.posMin + 5;
+    PrintState(true);
+}

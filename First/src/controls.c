@@ -35,33 +35,21 @@ void PrintState(bool posOnly)
  */
 void MoveTo(double y, double z, double yRPM, double zRPM)
 {
-    double deltaY = fabs(y - state.y);
-    double mdeltaY = 0;
-    double deltaZ = fabs(z - state.z);
-    double mdeltaZ = 0;
+    double deltaY = y - state.y;
+    double deltaZ = z - state.z;
 
-    if (y >= state.y)
+    if (y > motorY.posMax || y < motorY.posMin || z > motorZ.posMax || z < motorZ.posMin)
     {
-        mdeltaY = MoveByDist(&motorY, deltaY, yRPM);
+        printf("Move is outside of range!\n");
     }
-    else if (y < state.y)
+    else
     {
-        deltaY = deltaY * -1;
-        mdeltaY = MoveByDist(&motorY, deltaY, yRPM);
-    }
-
-    if (z >= state.z)
-    {
-        mdeltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
-    }
-    else if (z < state.z)
-    {
-        deltaZ = deltaZ * -1;
-        mdeltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
+        deltaY = MoveByDist(&motorY, deltaY, yRPM);
+        deltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
+        state.y += deltaY;
+        state.z += deltaZ;
     }
 
-    state.y += mdeltaY;
-    state.z += mdeltaZ;
     PrintState(true);
 }
 

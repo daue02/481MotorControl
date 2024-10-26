@@ -31,6 +31,7 @@ struct stateMachine
 
 extern struct stateMachine state;
 
+void PrintState(bool posOnly);
 void MoveTo(double y, double z, double yRPM, double zRPM);
 void MoveBy(double rel_y, double rel_z, double yRPM, double zRPM);
 void PrintCartesianCoords(double y, double z);

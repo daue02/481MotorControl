@@ -28,13 +28,13 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   Motors_Init();
-  // Limit_Switch_Init();
+  Limit_Switch_Init();
   //  HMI_Init();
 
   // updateStateMachine("Unhomed");
   //  SystemHealthCheck();
 
-  SerialDemo();
+  // SerialDemo();
 
   /*
   updateStateMachine("Unhomed");
@@ -230,8 +230,9 @@ void SerialDemo(void)
   {
     double y = 0, z = 0;
     RecieveCoordinates(&y, &z);
-    MoveTo(y, z, 250.0, 250.0);
-    while (motorY.isMoving|| motorZ.isMoving)
+    MoveTo(y, z, 500.0, 500.0);
+    // MoveBy(y,z,500,500);
+    while (motorY.isMoving || motorZ.isMoving)
     {
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
