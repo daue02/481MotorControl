@@ -20,6 +20,8 @@ Motor motorY = {
     .stepPin = GPIO_PIN_4,
     .dirPort = GPIOB,
     .dirPin = GPIO_PIN_5,
+    .sleepPort = GPIOA,
+    .sleepPin = GPIO_PIN_8,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // NEED TO UPDATE
@@ -34,6 +36,8 @@ Motor motorZ = {
     .stepPin = GPIO_PIN_3,
     .dirPort = GPIOA,
     .dirPin = GPIO_PIN_10,
+    .sleepPort = GPIOB,
+    .sleepPin = GPIO_PIN_10,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // Actual: 5mm
@@ -61,6 +65,10 @@ void Motor_Init(Motor motor)
     // Initialize Direction Pin
     GPIO_InitStruct.Pin = motor.dirPin;
     HAL_GPIO_Init(motor.dirPort, &GPIO_InitStruct);
+
+    // Initialize sleep pin
+    GPIO_InitStruct.Pin = motor.sleepPin;
+    HAL_GPIO_Init(motor.sleepPort, &GPIO_InitStruct);
 }
 
 /**
@@ -88,6 +96,8 @@ void Motors_Init(void)
  */
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {
+    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
+
     if (dist > 0)
     {
         HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
@@ -147,12 +157,14 @@ void StepMotor(Motor *motor)
         if (motor->name == motorY.name)
         {
             HAL_TIM_Base_Stop_IT(&htim3);
+            
         }
         else if (motor->name == motorZ.name)
         {
             HAL_TIM_Base_Stop_IT(&htim4);
         }
         motor->isMoving = 0;
+        HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 0);
     }
     HAL_GPIO_TogglePin(motor->stepPort, motor->stepPin);
     motor->stepsToComplete--;

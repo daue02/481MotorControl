@@ -18,6 +18,8 @@ typedef struct
     uint16_t stepPin;         // Pin for stepping
     GPIO_TypeDef *dirPort;    // Port for the direction
     uint16_t dirPin;          // Pin to set direction
+    GPIO_TypeDef *sleepPort;  // Port for sleep mode
+    uint16_t sleepPin;        // Pin or sleep mode
     bool dir;                 // Motor direction
     double stepsPerRev;       // Motor Resolution * Microstep
     double lead;              // Leadscrew lead [mm/rev]

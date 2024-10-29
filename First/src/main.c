@@ -34,12 +34,12 @@ int main(void)
   // updateStateMachine("Unhomed");
   //  SystemHealthCheck();
 
-  // SerialDemo();
+  SerialDemo();
 
   /*
   updateStateMachine("Unhomed");
 
-  SystemHealthCheck();
+
 
   // Wait for the home button to be pushed
   printf("Waiting to home...\n");
@@ -230,7 +230,7 @@ void SerialDemo(void)
   {
     double y = 0, z = 0;
     RecieveCoordinates(&y, &z);
-    MoveTo(y, z, 500.0, 500.0);
+    MoveTo(y, z, 250.0, 250.0);
     // MoveBy(y,z,500,500);
     while (motorY.isMoving || motorZ.isMoving)
     {
@@ -261,18 +261,6 @@ void SystemHealthCheck(void)
   else if (zSW.Pin_n_state)
   {
     printf("Error: check Z- sw\n");
-  }
-  else if (!homeButton.pin_state)
-  {
-    printf("Error: Check home button\n");
-  }
-  else if (!runTestButton.pin_state)
-  {
-    printf("Error: Check runTest button\n");
-  }
-  else if (!autoManButton.pin_state)
-  {
-    printf("Error: Check autoMan button\n");
   }
   else
   {
