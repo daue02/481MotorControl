@@ -28,7 +28,7 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  Motors_Init();
+  // Motors_Init();
   Drill_Init();
   Limit_Switch_Init();
   HMI_Init();
@@ -39,6 +39,11 @@ int main(void)
   setDrillPower(75);
   HAL_Delay(1000);
   setDrillPower(0);
+
+  while (1)
+  {
+    // so main never finishes
+  }
 
   // updateStateMachine("Unhomed");
   //  SystemHealthCheck();

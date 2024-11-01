@@ -16,12 +16,12 @@ uint32_t CalculateMotorSpeed(Motor *motor);
 // Motor Objects
 Motor motorY = {
     .name = "motorY",
-    .stepPort = GPIOB,
-    .stepPin = GPIO_PIN_4,
+    .stepPort = GPIOA,
+    .stepPin = GPIO_PIN_8,
     .dirPort = GPIOB,
-    .dirPin = GPIO_PIN_5,
+    .dirPin = GPIO_PIN_10,
     .sleepPort = GPIOA,
-    .sleepPin = GPIO_PIN_8,
+    .sleepPin = GPIO_PIN_9,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // NEED TO UPDATE
@@ -37,7 +37,7 @@ Motor motorZ = {
     .dirPort = GPIOA,
     .dirPin = GPIO_PIN_10,
     .sleepPort = GPIOB,
-    .sleepPin = GPIO_PIN_10,
+    .sleepPin = GPIO_PIN_4,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 1,           // Actual: 5mm
