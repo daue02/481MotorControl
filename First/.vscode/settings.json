@@ -7,6 +7,8 @@
         "hmi_hal.h": "c",
         "limit_switch_hal.h": "c",
         "string.h": "c",
-        "stm32f4xx_nucleo.h": "c"
+        "stm32f4xx_nucleo.h": "c",
+        "controls.h": "c",
+        "motor_hal.h": "c"
     }
 }

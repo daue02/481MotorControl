@@ -42,5 +42,6 @@ void Motors_Init(void);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
 void HomeMotors(void);
 void StopMotors(void);
+void SpinDrill(int power);
 
 #endif

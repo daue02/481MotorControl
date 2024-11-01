@@ -53,7 +53,6 @@ void Limit_Switch_Init(void)
     // Enable and set EXTI line Interrupt to the given priority
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-    printf("LS Initialized\n");
 }
 
 /**

@@ -1,5 +1,6 @@
 #include "main.h"
 #include "controls.h"
+#include "drill_hal.h"
 #include "hmi_hal.h"
 #include "motor_hal.h"
 #include "limit_switch_hal.h"
@@ -28,18 +29,24 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   Motors_Init();
+  Drill_Init();
   Limit_Switch_Init();
-  //  HMI_Init();
+  HMI_Init();
+
+  // Testubg drill speed control - TO BE VERIFIED ON NEW DRIVER
+  setDrillPower(50);
+  HAL_Delay(1000);
+  setDrillPower(75);
+  HAL_Delay(1000);
+  setDrillPower(0);
 
   // updateStateMachine("Unhomed");
   //  SystemHealthCheck();
 
-  SerialDemo();
+  // SerialDemo();
 
   /*
   updateStateMachine("Unhomed");
-
-
 
   // Wait for the home button to be pushed
   printf("Waiting to home...\n");

@@ -157,7 +157,6 @@ void StepMotor(Motor *motor)
         if (motor->name == motorY.name)
         {
             HAL_TIM_Base_Stop_IT(&htim3);
-            
         }
         else if (motor->name == motorZ.name)
         {

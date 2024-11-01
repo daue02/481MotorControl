@@ -3,12 +3,10 @@
 #include "controls.h"
 
 TIM_HandleTypeDef htim5;
-ADC_HandleTypeDef hadc1;
 
 void HMI_Init(void);
 static void TIM5_Init(void);
 void TIM5_IRQHandler(void);
-void buttonDebug(void);
 
 buttonLED greenLED =
     {
@@ -41,35 +39,25 @@ buttonLED activeLED =
 buttonLED homeButton =
     {
         .name = "homeButton",
-        .port = GPIOC,
-        .pin = GPIO_PIN_11,
+        .port = GPIOB,
+        .pin = GPIO_PIN_0,
         .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
+        .pull = GPIO_PULLUP,
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
-buttonLED runTestButton =
+buttonLED auxButton =
     {
-        .name = "runTestButton",
-        .port = GPIOC,
-        .pin = GPIO_PIN_10,
+        .name = "auxButton",
+        .port = GPIOA,
+        .pin = GPIO_PIN_4,
         .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
-        .speed = GPIO_SPEED_FREQ_LOW,
-};
-
-buttonLED autoManButton =
-    {
-        .name = "autoManButton",
-        .port = GPIOD,
-        .pin = GPIO_PIN_2,
-        .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
+        .pull = GPIO_PULLUP,
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
 /**
- * @brief Initializes the pins and state of the buttons/LEDs
+ * @brief Initializes the pins and state of a single button or LED
  *
  * @param butLED Button/LED object
  */
@@ -88,7 +76,7 @@ void buttonLED_Init(buttonLED *butLED)
 }
 
 /**
- * @brief Initializes all HMI components, to be used in main
+ * @brief Initializes all buttons/LEDs, to be used in main
  *
  */
 void HMI_Init(void)
@@ -98,8 +86,7 @@ void HMI_Init(void)
     buttonLED_Init(&greenLED);
     buttonLED_Init(&redLED);
     buttonLED_Init(&homeButton);
-    buttonLED_Init(&runTestButton);
-    buttonLED_Init(&autoManButton);
+    buttonLED_Init(&auxButton);
 }
 
 static void TIM5_Init(void)
@@ -129,6 +116,12 @@ void TIM5_IRQHandler(void)
     }
 }
 
+/**
+ * @brief Flashes an LED at a slow (0.5s) or fast (0.1s) pace
+ *
+ * @param butLED LED to flash
+ * @param speed period in [s]
+ */
 void flashLED(buttonLED butLED, double speed)
 {
     double timerPeriod = 1000000 * speed; // 1MHz clock * Speed
@@ -139,12 +132,22 @@ void flashLED(buttonLED butLED, double speed)
     HAL_TIM_Base_Start_IT(&htim5);
 }
 
+/**
+ * @brief Turns an LED on
+ *
+ * @param butLED LED to turn on
+ */
 void solidLED(buttonLED butLED)
 {
     HAL_TIM_Base_Stop_IT(&htim5);
     HAL_GPIO_WritePin(butLED.port, butLED.pin, GPIO_PIN_SET);
 }
 
+/**
+ * @brief Turns an LED off
+ *
+ * @param butLED LED to turn off
+ */
 void stopLED(buttonLED butLED)
 {
     HAL_TIM_Base_Stop_IT(&htim5);
@@ -197,6 +200,11 @@ void changeLEDState(buttonLED butLED, const char *ledMode)
     }
 }
 
+/**
+ * @brief Reads the digital state of a button
+ *
+ * @param butLED Button to read
+ */
 void readDigitalPinState(buttonLED butLED)
 {
     GPIO_PinState button_state = HAL_GPIO_ReadPin(butLED.port, butLED.pin);
@@ -213,17 +221,60 @@ void readDigitalPinState(buttonLED butLED)
 }
 
 /**
- * @brief Print pin state of 3 buttons to console for debugging
+ * @brief Debug to test all lights and buttons of the HMI
  *
  */
-void buttonDebug(void)
+void hmiTesting(void)
 {
-    while (1)
+    printf("HMI Testing Beginning in 3s\n");
+    HAL_Delay(3000);
+
+    printf("Green Solid\n");
+    changeLEDState(greenLED, "Solid");
+    HAL_Delay(3000);
+
+    printf("Green Slow\n");
+    changeLEDState(greenLED, "Slow");
+    HAL_Delay(3000);
+
+    printf("Green Fast\n");
+    changeLEDState(greenLED, "Fast");
+    HAL_Delay(3000);
+
+    printf("Red Solid\n");
+    changeLEDState(redLED, "Solid");
+    HAL_Delay(3000);
+
+    printf("Red Slow\n");
+    changeLEDState(redLED, "Slow");
+    HAL_Delay(3000);
+
+    printf("Red Fast\n");
+    changeLEDState(redLED, "Fast");
+    HAL_Delay(3000);
+
+    int i = 0;
+    for (i = 0; i < 11; i++)
     {
-        readDigitalPinState(homeButton);
-        readDigitalPinState(runTestButton);
-        readDigitalPinState(autoManButton);
+        if (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin) == GPIO_PIN_SET)
+        {
+            printf("Home button ON\n");
+        }
+        else
+        {
+            printf("Home button OFF\n");
+        }
+
+        if (HAL_GPIO_ReadPin(auxButton.port, auxButton.pin) == GPIO_PIN_SET)
+        {
+            printf("Aux button ON\n");
+        }
+        else
+        {
+            printf("Aux button OFF\n");
+        }
         printf("\n");
         HAL_Delay(2000);
     }
+    printf("Test complete, please try the RESET button\n");
 }
