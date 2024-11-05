@@ -8,7 +8,7 @@
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
-UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart1;
 
 struct stateMachine state = {0};
 
@@ -18,6 +18,22 @@ double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 void SystemHealthCheck(void);
+
+uint8_t txData[] = "Hello, Pi!";
+uint8_t rxData[32] = {0}; // Buffer to store received data
+HAL_StatusTypeDef txStatus, rxStatus;
+
+// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+// {
+//   if (huart->Instance == USART1) // Check if the interrupt is from USART1
+//   {
+//     // Print the received data to the serial monitor
+//     printf("Received from Pi: %s\r\n", rxData);
+
+//     // Restart the receive process
+//     HAL_UART_Receive_IT(&huart1, rxData, sizeof(txData));
+//   }
+// }
 
 int main(void)
 {
@@ -29,46 +45,55 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   // Motors_Init();
-  Drill_Init();
-  Limit_Switch_Init();
-  HMI_Init();
+  // Drill_Init();
+  // Limit_Switch_Init();
+  // HMI_Init();
 
-  // Testubg drill speed control - TO BE VERIFIED ON NEW DRIVER
-  setDrillPower(50);
-  HAL_Delay(1000);
-  setDrillPower(75);
-  HAL_Delay(1000);
-  setDrillPower(0);
+  // Start the receive interrupt before entering the loop
+  // HAL_UART_Receive_IT(&huart1, rxData, sizeof(txData));
+
+  // while (1)
+  // {
+  //   // Transmit data
+  //   txStatus = HAL_UART_Transmit(&huart1, txData, sizeof(txData), HAL_MAX_DELAY);
+  //   if (txStatus == HAL_OK)
+  //   {
+  //     printf("Data sent: %s\r\n", txData);
+  //   }
+  //   else
+  //   {
+  //     printf("Transmission failed.\r\n");
+  //   }
+
+  //   // Wait for the data to be received (handled in the callback)
+  //   HAL_Delay(1000); // Delay for demonstration purposes
+  // }
 
   while (1)
   {
-    // so main never finishes
+    // Transmit data to the loopback
+    txStatus = HAL_UART_Transmit(&huart1, txData, sizeof(txData), HAL_MAX_DELAY);
+    if (txStatus != HAL_OK)
+    {
+      printf("Transmission failed with status: %d\r\n", txStatus);
+    }
+    else
+    {
+      // Wait to receive the data sent
+      rxStatus = HAL_UART_Receive(&huart1, rxData, sizeof(txData), HAL_MAX_DELAY);
+      if (rxStatus == HAL_OK)
+      {
+        // Print received data to serial monitor
+        printf("Received from Pi: %s\r\n", rxData);
+      }
+      else
+      {
+        printf("Receive failed with status: %d\r\n", rxStatus);
+      }
+    }
+
+    HAL_Delay(1000); // Delay for demonstration purposes
   }
-
-  // updateStateMachine("Unhomed");
-  //  SystemHealthCheck();
-
-  // SerialDemo();
-
-  /*
-  updateStateMachine("Unhomed");
-
-  // Wait for the home button to be pushed
-  printf("Waiting to home...\n");
-  while (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin))
-  {
-    HAL_Delay(1);
-  }
-
-  // Home the robot
-  // HomeMotors();
-
-  // Need to create some sort of serial demo
-  while (1)
-  {
-    HAL_Delay(1);
-  }
-  */
 }
 
 #ifdef __GNUC__
@@ -159,6 +184,7 @@ void ErrorHandler(void)
  */
 void Serial_Init(void)
 {
+  // Initialize primary UART (e.g., USARTx)
   UartHandle.Instance = USARTx;
   UartHandle.Init.BaudRate = 9600;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
@@ -169,6 +195,21 @@ void Serial_Init(void)
   UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
 
   if (HAL_UART_Init(&UartHandle) != HAL_OK)
+  {
+    ErrorHandler();
+  }
+
+  // Initialize secondary UART (USART1 for Pi connection)
+  huart1.Instance = USART1;    // Update to USART1
+  huart1.Init.BaudRate = 9600; // Set to match Pi's UART baud rate
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+
+  if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     ErrorHandler();
   }
