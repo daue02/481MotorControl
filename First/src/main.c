@@ -8,7 +8,7 @@
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart6;
 
 struct stateMachine state = {0};
 
@@ -31,7 +31,7 @@ HAL_StatusTypeDef txStatus, rxStatus;
 //     printf("Received from Pi: %s\r\n", rxData);
 
 //     // Restart the receive process
-//     HAL_UART_Receive_IT(&huart1, rxData, sizeof(txData));
+//     HAL_UART_Receive_IT(&huart6, rxData, sizeof(txData));
 //   }
 // }
 
@@ -49,30 +49,10 @@ int main(void)
   // Limit_Switch_Init();
   // HMI_Init();
 
-  // Start the receive interrupt before entering the loop
-  // HAL_UART_Receive_IT(&huart1, rxData, sizeof(txData));
-
-  // while (1)
-  // {
-  //   // Transmit data
-  //   txStatus = HAL_UART_Transmit(&huart1, txData, sizeof(txData), HAL_MAX_DELAY);
-  //   if (txStatus == HAL_OK)
-  //   {
-  //     printf("Data sent: %s\r\n", txData);
-  //   }
-  //   else
-  //   {
-  //     printf("Transmission failed.\r\n");
-  //   }
-
-  //   // Wait for the data to be received (handled in the callback)
-  //   HAL_Delay(1000); // Delay for demonstration purposes
-  // }
-
   while (1)
   {
     // Transmit data to the loopback
-    txStatus = HAL_UART_Transmit(&huart1, txData, sizeof(txData), HAL_MAX_DELAY);
+    txStatus = HAL_UART_Transmit(&huart6, txData, sizeof(txData), HAL_MAX_DELAY);
     if (txStatus != HAL_OK)
     {
       printf("Transmission failed with status: %d\r\n", txStatus);
@@ -80,7 +60,7 @@ int main(void)
     else
     {
       // Wait to receive the data sent
-      rxStatus = HAL_UART_Receive(&huart1, rxData, sizeof(txData), HAL_MAX_DELAY);
+      rxStatus = HAL_UART_Receive(&huart6, rxData, sizeof(txData), HAL_MAX_DELAY);
       if (rxStatus == HAL_OK)
       {
         // Print received data to serial monitor
@@ -199,17 +179,17 @@ void Serial_Init(void)
     ErrorHandler();
   }
 
-  // Initialize secondary UART (USART1 for Pi connection)
-  huart1.Instance = USART1;    // Update to USART1
-  huart1.Init.BaudRate = 9600; // Set to match Pi's UART baud rate
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  // Initialize secondary UART
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 9600;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
 
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  if (HAL_UART_Init(&huart6) != HAL_OK)
   {
     ErrorHandler();
   }
