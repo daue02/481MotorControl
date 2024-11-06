@@ -73,27 +73,27 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
     GPIO_InitStruct.Alternate = USARTx_RX_AF;
     HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
   }
-  else if (huart->Instance == USART6) // Secondary UART configuration for USART6
+  else if (huart->Instance == UART5) // Configuration for UART5
   {
-    /* Enable GPIO clock for USART6 TX/RX pins */
-    USART6_TX_GPIO_CLK_ENABLE();
-    USART6_RX_GPIO_CLK_ENABLE();
+    /* Enable GPIO clock for UART5 TX/RX pins */
+    UART5_TX_GPIO_CLK_ENABLE();
+    UART5_RX_GPIO_CLK_ENABLE();
 
-    /* Enable USART6 clock */
-    USART6_CLK_ENABLE();
+    /* Enable UART5 clock */
+    UART5_CLK_ENABLE();
 
-    /* UART6 TX GPIO pin configuration (PC6) */
-    GPIO_InitStruct.Pin = USART6_TX_PIN;
+    /* UART5 TX GPIO pin configuration (PC12) */
+    GPIO_InitStruct.Pin = UART5_TX_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate = USART6_TX_AF;
-    HAL_GPIO_Init(USART6_TX_GPIO_PORT, &GPIO_InitStruct);
+    GPIO_InitStruct.Alternate = UART5_TX_AF;
+    HAL_GPIO_Init(UART5_TX_GPIO_PORT, &GPIO_InitStruct);
 
-    /* UART6 RX GPIO pin configuration (PC7) */
-    GPIO_InitStruct.Pin = USART6_RX_PIN;
-    GPIO_InitStruct.Alternate = USART6_RX_AF;
-    HAL_GPIO_Init(USART6_RX_GPIO_PORT, &GPIO_InitStruct);
+    /* UART5 RX GPIO pin configuration (PD2) */
+    GPIO_InitStruct.Pin = UART5_RX_PIN;
+    GPIO_InitStruct.Alternate = UART5_RX_AF;
+    HAL_GPIO_Init(UART5_RX_GPIO_PORT, &GPIO_InitStruct);
   }
 }
 
@@ -119,17 +119,17 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart)
     /* Configure USART2 Rx as alternate function */
     HAL_GPIO_DeInit(USARTx_RX_GPIO_PORT, USARTx_RX_PIN);
   }
-  else if (huart->Instance == USART6) // De-initialize USART6
+  else if (huart->Instance == UART5) // De-initialize UART5
   {
-    /*##-1- Reset peripherals for USART6 ##################################*/
-    USART6_FORCE_RESET();
-    USART6_RELEASE_RESET();
+    /*##-1- Reset peripherals for UART5 ##################################*/
+    UART5_FORCE_RESET();
+    UART5_RELEASE_RESET();
 
     /*##-2- Disable peripherals and GPIO Clocks ###########################*/
-    /* Configure USART6 Tx as alternate function */
-    HAL_GPIO_DeInit(USART6_TX_GPIO_PORT, USART6_TX_PIN);
-    /* Configure USART6 Rx as alternate function */
-    HAL_GPIO_DeInit(USART6_RX_GPIO_PORT, USART6_RX_PIN);
+    /* Configure UART5 Tx as alternate function */
+    HAL_GPIO_DeInit(UART5_TX_GPIO_PORT, UART5_TX_PIN);
+    /* Configure UART5 Rx as alternate function */
+    HAL_GPIO_DeInit(UART5_RX_GPIO_PORT, UART5_RX_PIN);
   }
 }
 
