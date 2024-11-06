@@ -20,6 +20,7 @@ void SerialDemo(void);
 void SystemHealthCheck(void);
 
 uint8_t txData[] = "Hello, Pi!";
+uint8_t expRxData[] = "Hello, Nucleo!";
 uint8_t rxData[32] = {0}; // Buffer to store received data
 HAL_StatusTypeDef txStatus, rxStatus;
 
@@ -45,9 +46,9 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   // Motors_Init();
-  // Drill_Init();
-  // Limit_Switch_Init();
-  // HMI_Init();
+  Drill_Init();
+  Limit_Switch_Init();
+  HMI_Init();
 
   while (1)
   {
@@ -59,12 +60,13 @@ int main(void)
     }
     else
     {
+      printf("Sent: %s\r\n", txData);
       // Wait to receive the data sent
-      rxStatus = HAL_UART_Receive(&huart5, rxData, sizeof(txData), HAL_MAX_DELAY);
+      rxStatus = HAL_UART_Receive(&huart5, rxData, sizeof(expRxData) - 1, HAL_MAX_DELAY);
       if (rxStatus == HAL_OK)
       {
         // Print received data to serial monitor
-        printf("Received from Pi: %s\r\n", rxData);
+        printf("Received: %s\r\n", rxData);
       }
       else
       {
@@ -87,8 +89,6 @@ PUTCHAR_PROTOTYPE
   HAL_UART_Transmit(&UartHandle, (uint8_t *)&ch, 1, 0xFFFF);
   return ch;
 }
-
-//
 
 /**
  * @brief Configures the clock settings.
