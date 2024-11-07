@@ -30,6 +30,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 bool parse_message(uint8_t *rxData, uint8_t *message_type, uint8_t *axis, uint16_t *position);
 void construct_message(uint8_t message_type, uint8_t axis, uint16_t position, uint8_t *txData);
+int handleMessage(void);
 
 uint8_t rxBuffer[RX_BUFFER_SIZE];
 uint8_t txBuffer[TX_BUFFER_SIZE];
@@ -60,68 +61,7 @@ int main(void)
   {
     if (rxReady)
     {
-      rxReady = false;
-
-      uint8_t message_type;
-      uint8_t axis;
-      uint16_t position;
-      bool valid = parse_message(rxBuffer, &message_type, &axis, &position);
-
-      if (valid)
-      {
-        if (message_type == 0x01) // Command message from Raspberry Pi
-        {
-          // Process the received command
-          printf("Received Command: Axis %d, Position %d\r\n", axis, position);
-
-          // Send acknowledgment back
-          construct_message(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
-          HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-
-          // Simulate processing delay
-          HAL_Delay(1000); // Delay for 1 second (adjust as needed)
-
-          // After processing, send a command message back to the Pi
-          // For example, sending a status update or confirmation
-          uint8_t new_axis = axis;          // Example: same axis
-          uint16_t new_position = position; // Example: same position or updated value
-
-          construct_message(0x02, new_axis, new_position, txBuffer); // Message Type 0x02 for Data
-          HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-          printf("Sent Data: Axis %d, Position %d\r\n", new_axis, new_position);
-        }
-        else if (message_type == 0x03 || message_type == 0x04)
-        {
-          // Received ACK or Error; the Nucleo can ignore these in this context
-          printf("Received Message Type %d, ignoring.\r\n", message_type);
-        }
-        else if (message_type == 0x02) // Data message (unlikely in this setup)
-        {
-          // Process data message as needed
-          printf("Received Data: Axis %d, Position %d\r\n", axis, position);
-
-          // Send acknowledgment back
-          construct_message(0x03, axis, position, txBuffer); // ACK
-          HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-        }
-        else
-        {
-          printf("Unknown message type received: %d\r\n", message_type);
-          // Optionally send an error message back
-          construct_message(0x04, 0, 0, txBuffer); // Error message
-          HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-        }
-      }
-      else
-      {
-        printf("Checksum error\r\n");
-        // Send error message back
-        construct_message(0x04, 0, 0, txBuffer); // Error message
-        HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-      }
-
-      // Restart UART reception
-      HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFFER_SIZE);
+      handleMessage();
     }
 
     // Other tasks can be performed here
@@ -129,6 +69,78 @@ int main(void)
 
     HAL_Delay(1); // Short delay to prevent 100% CPU usage
   }
+}
+
+int handleMessage(void)
+{
+  rxReady = false;
+
+  uint8_t message_type;
+  uint8_t axis;
+  uint16_t position;
+  bool valid = parse_message(rxBuffer, &message_type, &axis, &position);
+  int returnCode = 0;
+
+  if (valid)
+  {
+    if (message_type == 0x01) // Command message from Raspberry Pi
+    {
+      // Process the received command
+      printf("Received Command: Axis %d, Position %d\r\n", axis, position);
+
+      // Send acknowledgment back
+      construct_message(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
+      HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+
+      // Simulate processing delay
+      HAL_Delay(1000); // Delay for 1 second (adjust as needed)
+
+      // After processing, send a command message back to the Pi
+      // For example, sending a status update or confirmation
+      uint8_t new_axis = axis;          // Example: same axis
+      uint16_t new_position = position; // Example: same position or updated value
+
+      construct_message(0x02, new_axis, new_position, txBuffer); // Message Type 0x02 for Data
+      HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+      printf("Sent Data: Axis %d, Position %d\r\n", new_axis, new_position);
+    }
+    else if (message_type == 0x03 || message_type == 0x04)
+    {
+      // Received ACK or Error; the Nucleo can ignore these in this context
+      printf("Received Message Type %d, ignoring.\r\n", message_type);
+    }
+    else if (message_type == 0x02) // Data message (unlikely in this setup)
+    {
+      // Process data message as needed
+      printf("Received Data: Axis %d, Position %d\r\n", axis, position);
+
+      // Send acknowledgment back
+      construct_message(0x03, axis, position, txBuffer); // ACK
+      HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+    }
+    else
+    {
+      printf("Unknown message type received: %d\r\n", message_type);
+      // Optionally send an error message back
+      construct_message(0x04, 0, 0, txBuffer); // Error message
+      HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+
+      returnCode = -1;
+    }
+  }
+  else
+  {
+    printf("Checksum error\r\n");
+    // Send error message back
+    construct_message(0x04, 0, 0, txBuffer); // Error message
+    HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+
+    returnCode = -1;
+  }
+
+  // Restart UART reception
+  HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFFER_SIZE);
+  return returnCode;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
