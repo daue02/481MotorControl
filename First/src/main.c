@@ -47,6 +47,10 @@ bool rxReady = false;
 CommandData currentCommand;
 volatile bool commandPending = false;
 
+/**
+ * @brief UART5 interrupt handler.
+ *
+ */
 void UART5_IRQHandler(void)
 {
   HAL_UART_IRQHandler(&huart5);
@@ -94,7 +98,7 @@ int main(void)
     }
 
     /*
-      This is to simulate the motor stuf completing elsewhere
+      This is to simulate the motor stuff completing elsewhere
       and then calling the callback function to indicate completion.
       This should actaully be done in the motor HAL once the movement is complete.
     */
@@ -109,6 +113,17 @@ int main(void)
   }
 }
 
+/**
+ * @brief Sends a message over the UART interface.
+ *
+ * This function constructs a message with the specified parameters and transmits it using
+ * the UART interface. It is used to send acknowledgments, data messages, or error messages
+ * back to the Raspberry Pi.
+ *
+ * @param messageType The type of the message to send (e.g., command, data, acknowledgment, error).
+ * @param axis The axis identifier associated with the message.
+ * @param position The position value associated with the message.
+ */
 void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
 {
   constructMessage(messageType, axis, position, txBuffer);
@@ -116,6 +131,15 @@ void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
   printf("Sent Message: Type %d, Axis %d, Position %d\r\n", messageType, axis, position);
 }
 
+/**
+ * @brief Receives and processes a message from the UART interface.
+ *
+ * This function checks if a message has been received, parses it, and handles it accordingly.
+ * If a command message is received, it stores the command data for further processing.
+ *
+ * @param cmdData Pointer to a CommandData structure where the received command data will be stored.
+ * @return 0 if a valid command was received and processed; -1 otherwise.
+ */
 int receiveMessage(CommandData *cmdData)
 {
   rxReady = false;
@@ -123,7 +147,7 @@ int receiveMessage(CommandData *cmdData)
   uint8_t messageType;
   uint8_t axis;
   uint16_t position;
-  int returnCode = -1; // Default to -1, change to 0 if a valid command is received
+  int returnCode = -1;
 
   bool valid = parseMessage(rxBuffer, &messageType, &axis, &position);
 
@@ -131,7 +155,6 @@ int receiveMessage(CommandData *cmdData)
   {
     if (messageType == 0x01) // Command message from Raspberry Pi
     {
-      // Process the received command
       printf("Received Command: Axis %d, Position %d\r\n", axis, position);
 
       // Send acknowledgment back
@@ -161,7 +184,7 @@ int receiveMessage(CommandData *cmdData)
     else
     {
       printf("Unknown message type received: %d\r\n", messageType);
-      // Optionally send an error message back
+      // Send an error message back
       constructMessage(0x04, 0, 0, txBuffer); // Error message
       HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
     }
@@ -180,17 +203,33 @@ int receiveMessage(CommandData *cmdData)
   return returnCode;
 }
 
+/**
+ * @brief Callback function invoked when the motor operation is complete.
+ *
+ * This function is called by the motor module (or simulated via a timer interrupt) when the motor operation
+ * has finished. It sends a completion message back to the Raspberry Pi and updates the system state.
+ *
+ * @param axis The axis identifier for which the motor operation was performed.
+ * @param position The position value to which the motor moved.
+ */
 void motorOperationCompleteCallback(uint8_t axis, uint16_t position)
 {
   // Send a message back to the Pi to indicate completion
   sendMessage(0x02, axis, position); // Message Type 0x02 for Data
 
-  // Update command pending flag
   commandPending = false;
 
   printf("Motor operation complete: Axis %d, Position %d\r\n", axis, position);
 }
 
+/**
+ * @brief UART transmit complete callback function.
+ *
+ * This function is called by the HAL library when a UART transmit operation completes.
+ * It can be used to perform post-transmission tasks if needed.
+ *
+ * @param huart Pointer to the UART handle that triggered the callback.
+ */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == UART5)
@@ -199,15 +238,34 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   }
 }
 
+/**
+ * @brief UART receive complete callback function.
+ *
+ * This function is called by the HAL library when a UART receive operation completes.
+ * It sets a flag to indicate that data is ready to be processed by the main loop.
+ *
+ * @param huart Pointer to the UART handle that triggered the callback.
+ */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == UART5)
   {
     rxReady = true;
-    // Do not restart reception here; handle it after processing
   }
 }
 
+/**
+ * @brief Constructs a message with the specified parameters and calculates the checksum.
+ *
+ * This function formats a message according to the communication protocol by setting the
+ * message type, axis, and position. It also calculates and appends the checksum to ensure
+ * data integrity during transmission.
+ *
+ * @param messageType The type of the message (e.g., command, data, acknowledgment, error).
+ * @param axis The axis identifier (e.g., 0, 1, 2).
+ * @param position The position value associated with the message.
+ * @param buffer Pointer to the buffer where the constructed message will be stored.
+ */
 void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint8_t *txData)
 {
   txData[0] = messageType;
@@ -217,6 +275,18 @@ void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint
   txData[4] = (txData[0] + txData[1] + txData[2] + txData[3]) % 256; // Checksum
 }
 
+/**
+ * @brief Parses a received message and verifies its checksum.
+ *
+ * This function extracts the message type, axis, and position from the received message buffer.
+ * It verifies the checksum to ensure that the message has not been corrupted during transmission.
+ *
+ * @param buffer Pointer to the buffer containing the received message.
+ * @param messageType Pointer to a variable where the message type will be stored.
+ * @param axis Pointer to a variable where the axis identifier will be stored.
+ * @param position Pointer to a variable where the position value will be stored.
+ * @return true if the message is valid and the checksum matches; false otherwise.
+ */
 bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t *position)
 {
   uint8_t receivedChecksum = rxData[4];
@@ -235,6 +305,12 @@ bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t
   return true;
 }
 
+/**
+ * @brief Initializes the UART peripheral and starts reception in interrupt mode.
+ *
+ * This function configures the UART interface for communication and begins the initial
+ * reception process using interrupts. It should be called during system initialization.
+ */
 void UART_Init()
 {
   // Initialize secondary UART (UART5 for Pi connection)
