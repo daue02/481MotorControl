@@ -19,22 +19,18 @@ void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 void SystemHealthCheck(void);
 
-uint8_t txData[] = "Hello, Pi!";
-uint8_t expRxData[] = "Hello, Nucleo!";
-uint8_t rxData[32] = {0}; // Buffer to store received data
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+
+uint8_t txData[5] = {2, 3, 4, 5, 6};
+uint8_t rxData[5] = {0};
 HAL_StatusTypeDef txStatus, rxStatus;
+bool rxReady = true;
 
-// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-// {
-//   if (huart->Instance == USART1) // Check if the interrupt is from USART1
-//   {
-//     // Print the received data to the serial monitor
-//     printf("Received from Pi: %s\r\n", rxData);
-
-//     // Restart the receive process
-//     HAL_UART_Receive_IT(&huart5, rxData, sizeof(txData));
-//   }
-// }
+void UART5_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart5);
+}
 
 int main(void)
 {
@@ -45,36 +41,53 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  // Motors_Init();
   Drill_Init();
   Limit_Switch_Init();
   HMI_Init();
 
+  // Start UART reception before entering the loop
+  HAL_UART_Receive_IT(&huart5, rxData, sizeof(rxData));
+
   while (1)
   {
-    // Transmit data to the loopback
-    txStatus = HAL_UART_Transmit(&huart5, txData, sizeof(txData), HAL_MAX_DELAY);
-    if (txStatus != HAL_OK)
+    if (rxReady)
     {
-      printf("Transmission failed with status: %d\r\n", txStatus);
-    }
-    else
-    {
-      printf("Sent: %s\r\n", txData);
-      // Wait to receive the data sent
-      rxStatus = HAL_UART_Receive(&huart5, rxData, sizeof(expRxData) - 1, HAL_MAX_DELAY);
-      if (rxStatus == HAL_OK)
-      {
-        // Print received data to serial monitor
-        printf("Received: %s\r\n", rxData);
-      }
-      else
-      {
-        printf("Receive failed with status: %d\r\n", rxStatus);
-      }
-    }
+      rxReady = false;
 
+      printf("Received data: ");
+      for (int i = 0; i < sizeof(rxData); i++)
+      {
+        printf("%d ", rxData[i]);
+      }
+      printf("\r\n");
+
+      // Prepare data to send back (if necessary)
+      // Ensure txData is properly set up
+      txStatus = HAL_UART_Transmit_IT(&huart5, txData, sizeof(txData));
+      if (txStatus != HAL_OK)
+      {
+        printf("Transmission start failed with status: %d\r\n", txStatus);
+      }
+    }
     HAL_Delay(1000); // Delay for demonstration purposes
+  }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == UART5)
+  {
+    printf("Transmission complete.\r\n");
+  }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == UART5)
+  {
+    rxReady = true;
+    // Re-initiate UART reception for the next data packet
+    HAL_UART_Receive_IT(&huart5, rxData, sizeof(rxData));
   }
 }
 
@@ -188,6 +201,10 @@ void Serial_Init(void)
   huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart5.Init.Mode = UART_MODE_TX_RX;
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+
+  // Enable UART5 interrupt in NVIC
+  HAL_NVIC_SetPriority(UART5_IRQn, 0, 0); // Priority set to 0 (high) and subpriority 1 (adjust if needed)
+  HAL_NVIC_EnableIRQ(UART5_IRQn);         // Enable UART5 interrupt
 
   if (HAL_UART_Init(&huart5) != HAL_OK)
   {
