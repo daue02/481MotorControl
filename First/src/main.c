@@ -69,7 +69,7 @@ int main(void)
 
       if (valid)
       {
-        if (message_type == 0x01) // Command message
+        if (message_type == 0x01) // Command message from Raspberry Pi
         {
           // Process the received command
           printf("Received Command: Axis %d, Position %d\r\n", axis, position);
@@ -77,14 +77,25 @@ int main(void)
           // Send acknowledgment back
           construct_message(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
           HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+
+          // Simulate processing delay
+          HAL_Delay(1000); // Delay for 1 second (adjust as needed)
+
+          // After processing, send a command message back to the Pi
+          // For example, sending a status update or confirmation
+          uint8_t new_axis = axis;          // Example: same axis
+          uint16_t new_position = position; // Example: same position or updated value
+
+          construct_message(0x02, new_axis, new_position, txBuffer); // Message Type 0x02 for Data
+          HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+          printf("Sent Data: Axis %d, Position %d\r\n", new_axis, new_position);
         }
         else if (message_type == 0x03 || message_type == 0x04)
         {
-          // Received ACK or Error; typically, the Nucleo would not receive these in response to commands it didn't send
+          // Received ACK or Error; the Nucleo can ignore these in this context
           printf("Received Message Type %d, ignoring.\r\n", message_type);
-          // Do not send acknowledgment to prevent ack loops
         }
-        else if (message_type == 0x02) // Data message
+        else if (message_type == 0x02) // Data message (unlikely in this setup)
         {
           // Process data message as needed
           printf("Received Data: Axis %d, Position %d\r\n", axis, position);
@@ -113,8 +124,10 @@ int main(void)
       HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFFER_SIZE);
     }
 
-    // other work
-    HAL_Delay(1);
+    // Other tasks can be performed here
+    // ...
+
+    HAL_Delay(1); // Short delay to prevent 100% CPU usage
   }
 }
 
