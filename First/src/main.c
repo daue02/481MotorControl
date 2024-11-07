@@ -25,16 +25,27 @@ void SystemHealthCheck(void);
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
 
+typedef struct
+{
+  uint8_t axis;
+  uint16_t position;
+} CommandData;
+
 void UART_Init(void);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-bool parse_message(uint8_t *rxData, uint8_t *message_type, uint8_t *axis, uint16_t *position);
-void construct_message(uint8_t message_type, uint8_t axis, uint16_t position, uint8_t *txData);
-int handleMessage(void);
+bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t *position);
+void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint8_t *txData);
+int receiveMessage(CommandData *cmdData);
+
+void motorOperationCompleteCallback(uint8_t axis, uint16_t position);
 
 uint8_t rxBuffer[RX_BUFFER_SIZE];
 uint8_t txBuffer[TX_BUFFER_SIZE];
 bool rxReady = false;
+
+CommandData currentCommand;
+volatile bool commandPending = false;
 
 void UART5_IRQHandler(void)
 {
@@ -57,90 +68,127 @@ int main(void)
 
   printf("System Initialized\r\n");
 
+  CommandData cmdData;
+
   while (1)
   {
     if (rxReady)
     {
-      handleMessage();
+      int status = receiveMessage(&cmdData);
+      if (status == 0)
+      {
+        if (!commandPending)
+        {
+          // Start motor operation asynchronously
+          currentCommand = cmdData;
+          commandPending = true;
+
+          // Call motor operation function here
+        }
+        else
+        {
+          // Handle case where a command is received while another is pending
+          printf("Command received while another is in progress. Ignoring or queueing.\r\n");
+        }
+      }
     }
 
-    // Other tasks can be performed here
-    // ...
+    /*
+      This is to simulate the motor stuf completing elsewhere
+      and then calling the callback function to indicate completion.
+      This should actaully be done in the motor HAL once the movement is complete.
+    */
+    if (commandPending)
+    {
+      HAL_Delay(1000); // Simulate motor operation
+      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
+    }
 
-    HAL_Delay(1); // Short delay to prevent 100% CPU usage
+    // Other work can be done here
+    HAL_Delay(1);
   }
 }
 
-int handleMessage(void)
+void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
+{
+  constructMessage(messageType, axis, position, txBuffer);
+  HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+  printf("Sent Message: Type %d, Axis %d, Position %d\r\n", messageType, axis, position);
+}
+
+int receiveMessage(CommandData *cmdData)
 {
   rxReady = false;
 
-  uint8_t message_type;
+  uint8_t messageType;
   uint8_t axis;
   uint16_t position;
-  bool valid = parse_message(rxBuffer, &message_type, &axis, &position);
-  int returnCode = 0;
+  int returnCode = -1; // Default to -1, change to 0 if a valid command is received
+
+  bool valid = parseMessage(rxBuffer, &messageType, &axis, &position);
 
   if (valid)
   {
-    if (message_type == 0x01) // Command message from Raspberry Pi
+    if (messageType == 0x01) // Command message from Raspberry Pi
     {
       // Process the received command
       printf("Received Command: Axis %d, Position %d\r\n", axis, position);
 
       // Send acknowledgment back
-      construct_message(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
+      constructMessage(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
       HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
 
-      // Simulate processing delay
-      HAL_Delay(1000); // Delay for 1 second (adjust as needed)
+      // Store received command data
+      cmdData->axis = axis;
+      cmdData->position = position;
 
-      // After processing, send a command message back to the Pi
-      // For example, sending a status update or confirmation
-      uint8_t new_axis = axis;          // Example: same axis
-      uint16_t new_position = position; // Example: same position or updated value
-
-      construct_message(0x02, new_axis, new_position, txBuffer); // Message Type 0x02 for Data
-      HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-      printf("Sent Data: Axis %d, Position %d\r\n", new_axis, new_position);
+      returnCode = 0; // Indicate success
     }
-    else if (message_type == 0x03 || message_type == 0x04)
+    else if (messageType == 0x03 || messageType == 0x04)
     {
-      // Received ACK or Error; the Nucleo can ignore these in this context
-      printf("Received Message Type %d, ignoring.\r\n", message_type);
+      // Received ACK or Error; ignore or handle as needed
+      printf("Received Message Type %d, ignoring.\r\n", messageType);
     }
-    else if (message_type == 0x02) // Data message (unlikely in this setup)
+    else if (messageType == 0x02) // Data message (unlikely in this context)
     {
       // Process data message as needed
       printf("Received Data: Axis %d, Position %d\r\n", axis, position);
 
       // Send acknowledgment back
-      construct_message(0x03, axis, position, txBuffer); // ACK
+      constructMessage(0x03, axis, position, txBuffer); // ACK
       HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
     }
     else
     {
-      printf("Unknown message type received: %d\r\n", message_type);
+      printf("Unknown message type received: %d\r\n", messageType);
       // Optionally send an error message back
-      construct_message(0x04, 0, 0, txBuffer); // Error message
+      constructMessage(0x04, 0, 0, txBuffer); // Error message
       HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-
-      returnCode = -1;
     }
   }
   else
   {
     printf("Checksum error\r\n");
     // Send error message back
-    construct_message(0x04, 0, 0, txBuffer); // Error message
+    constructMessage(0x04, 0, 0, txBuffer); // Error message
     HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-
-    returnCode = -1;
   }
 
   // Restart UART reception
   HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFFER_SIZE);
+
   return returnCode;
+}
+
+void motorOperationCompleteCallback(uint8_t axis, uint16_t position)
+{
+  // Send a message back to the Pi to indicate completion
+  sendMessage(0x02, axis, position); // Message Type 0x02 for Data
+
+  // Update command pending flag
+  commandPending = false;
+
+  printf("Motor operation complete: Axis %d, Position %d\r\n", axis, position);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -160,28 +208,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   }
 }
 
-void construct_message(uint8_t message_type, uint8_t axis, uint16_t position, uint8_t *txData)
+void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint8_t *txData)
 {
-  txData[0] = message_type;
+  txData[0] = messageType;
   txData[1] = axis;
   txData[2] = (position >> 8) & 0xFF;                                // Position high byte
   txData[3] = position & 0xFF;                                       // Position low byte
   txData[4] = (txData[0] + txData[1] + txData[2] + txData[3]) % 256; // Checksum
 }
 
-// Function to parse a received message
-bool parse_message(uint8_t *rxData, uint8_t *message_type, uint8_t *axis, uint16_t *position)
+bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t *position)
 {
-  uint8_t received_checksum = rxData[4];
-  uint8_t calculated_checksum = (rxData[0] + rxData[1] + rxData[2] + rxData[3]) % 256;
+  uint8_t receivedChecksum = rxData[4];
+  uint8_t calculatedChecksum = (rxData[0] + rxData[1] + rxData[2] + rxData[3]) % 256;
 
-  if (received_checksum != calculated_checksum)
+  if (receivedChecksum != calculatedChecksum)
   {
     // Checksum error
     return false;
   }
 
-  *message_type = rxData[0];
+  *messageType = rxData[0];
   *axis = rxData[1];
   *position = ((uint16_t)rxData[2] << 8) | rxData[3];
 
