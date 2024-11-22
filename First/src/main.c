@@ -33,16 +33,12 @@ int main(void)
   Limit_Switch_Init();
   HMI_Init();
 
-  // StallMotors();
-
-  
   updateStateMachine("Unhomed");
   SystemHealthCheck();
   HAL_Delay(3000);
   HomeMotors();
   HAL_Delay(3000);
   SerialDemo();
-  
 
   /*
   updateStateMachine("Unhomed");

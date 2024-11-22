@@ -26,7 +26,7 @@ Motor motorY = {
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 8,           // 8
     .posMin = 0,
-    .posMax = 400,
+    .posMax = 248.27,
     .isMoving = 0,
 };
 
@@ -42,7 +42,7 @@ Motor motorZ = {
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
     .lead = 5,           // 5
     .posMin = -200,
-    .posMax = 100,
+    .posMax = 111.3,
     .isMoving = 0,
 };
 
@@ -111,8 +111,27 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     }
 
     motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Divide by 2, since each interrupt is a toggle
-    motor->accelStep = motor->stepsToComplete * 3 / 4;                                // Spend the first 1/4 of time accelerating
-    motor->decelStep = motor->stepsToComplete / 4;                                    // Spend the last 1/4 of time decelerating
+    motor->stepsToCompleteOrig = motor->stepsToComplete;
+    double accelTime = 0.25;                                                                    // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
+    double nominalTime = (double)motor->stepsToComplete / motor->stepsPerRev / speedRPM * 60.0; // Time to move at cnst speed
+
+    if (accelTime * 2 > nominalTime)
+    {
+        accelTime = nominalTime / 2;
+    }
+    motor->accelStep = motor->stepsToComplete - speedRPM * motor->stepsPerRev / 60 * accelTime; // Remaining steps when acceleration is complete
+    motor->decelStep = speedRPM * motor->stepsPerRev / 60 * accelTime;                          // Remaining steps when deceleration begins
+
+    // if (motor->name == motorY.name)
+    // {
+    //     printf("Steps to Complete: %d\n", motor->stepsToComplete);
+    //     printf("stepsPerRev: %d\n", (int)motor->stepsPerRev);
+    //     printf("speedRPM: %d\n", (int)speedRPM);
+    //     printf("Nominal Time: %d\n", (int)nominalTime);
+    //     printf("Accel Step: %d\n", (int)motor->accelStep);
+    //     printf("Decel Step: %d\n", (int)motor->decelStep);
+    // }
+
     motor->targetRPM = speedRPM;
     uint32_t timerPeriod = CalculateMotorSpeed(motor);
     motor->isMoving = 1;
@@ -163,6 +182,7 @@ void StepMotor(Motor *motor)
             HAL_TIM_Base_Stop_IT(&htim4);
         }
         motor->isMoving = 0;
+        motor->stepsToCompleteOrig = 0;
         HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 0);
     }
     HAL_GPIO_TogglePin(motor->stepPort, motor->stepPin);
@@ -236,13 +256,13 @@ uint32_t CalculateMotorSpeed(Motor *motor)
 {
     if (motor->stepsToComplete > motor->accelStep)
     {
-        double slope = 1.0 - ((double)(motor->stepsToComplete - motor->accelStep) / (motor->accelStep / 3.0));
+        double slope = 1.0 - ((double)(motor->stepsToComplete - motor->accelStep) / (motor->stepsToCompleteOrig - motor->accelStep));
         motor->currentRPM = MIN_RPM + slope * (motor->targetRPM - MIN_RPM);
     }
     else if (motor->stepsToComplete < motor->decelStep)
     {
-        double slope = ((double)motor->decelStep - motor->stepsToComplete) / motor->decelStep;
-        motor->currentRPM = motor->targetRPM - slope * (motor->targetRPM - MIN_RPM);
+        double slope = 1.0 - ((double)motor->decelStep - motor->stepsToComplete) / motor->decelStep;
+        motor->currentRPM = MIN_RPM + slope * (motor->targetRPM - MIN_RPM);
     }
 
     float timePerStep = 60.0 / (motor->currentRPM * motor->stepsPerRev); // Time per step in seconds
@@ -284,7 +304,7 @@ void HomeMotors(void)
 
     // Move right/down by 5mm
     // MoveBy(-1 * (motorY.posMax - motorY.posMin), -1 * (motorZ.posMax - motorZ.posMin), 250, 250);
-    MoveBy(5, 5, 50, 50);
+    MoveBy(5, 5, 25, 25);
     while (motorY.isMoving || motorZ.isMoving)
     {
         HAL_Delay(1);
@@ -292,10 +312,11 @@ void HomeMotors(void)
 
     // Update the state machine
     updateStateMachine("Idle");
-    state.y = motorY.posMin + 5;
-    state.z = motorZ.posMin + 5;
+    state.y = motorY.posMin + 7.00; // As measured for 5mm command 22-NOV-2024
+    state.z = motorZ.posMin + 6.82; // As measured for 5mm command 22-NOV-2024
 }
 
+// Use to set current limits on DRV8825 drivers
 void StallMotor(Motor *motor)
 {
     HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
@@ -305,4 +326,6 @@ void StallMotors(void)
 {
     printf("Stalling Y\n");
     StallMotor(&motorY);
+    // printf("Stalling Z\n");
+    // StallMotor(&motorZ);
 }
