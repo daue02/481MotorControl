@@ -33,24 +33,16 @@ int main(void)
   Limit_Switch_Init();
   HMI_Init();
 
-  hmiTesting();
-
   // StallMotors();
 
-  printf("Moving in 3s\n");
+  
+  updateStateMachine("Unhomed");
+  SystemHealthCheck();
   HAL_Delay(3000);
-  printf("Moving\n");
-  // MoveTo(10, 10, 200, 200);
-
-  while (1)
-  {
-    // so main never finishes
-  }
-
-  // updateStateMachine("Unhomed");
-  //  SystemHealthCheck();
-
-  // SerialDemo();
+  HomeMotors();
+  HAL_Delay(3000);
+  SerialDemo();
+  
 
   /*
   updateStateMachine("Unhomed");
@@ -245,7 +237,6 @@ void SerialDemo(void)
     double y = 0, z = 0;
     RecieveCoordinates(&y, &z);
     MoveTo(y, z, 250.0, 250.0);
-    // MoveBy(y,z,500,500);
     while (motorY.isMoving || motorZ.isMoving)
     {
       HAL_Delay(1); // Prevent user from sending another request while still moving

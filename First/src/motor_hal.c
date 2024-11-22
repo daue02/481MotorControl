@@ -24,7 +24,7 @@ Motor motorY = {
     .sleepPin = GPIO_PIN_4,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
-    .lead = 1,           // 8
+    .lead = 8,           // 8
     .posMin = 0,
     .posMax = 400,
     .isMoving = 0,
@@ -40,7 +40,7 @@ Motor motorZ = {
     .sleepPin = GPIO_PIN_6,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
-    .lead = 1,           // 5
+    .lead = 5,           // 5
     .posMin = -200,
     .posMax = 100,
     .isMoving = 0,
@@ -238,13 +238,11 @@ uint32_t CalculateMotorSpeed(Motor *motor)
     {
         double slope = 1.0 - ((double)(motor->stepsToComplete - motor->accelStep) / (motor->accelStep / 3.0));
         motor->currentRPM = MIN_RPM + slope * (motor->targetRPM - MIN_RPM);
-        // printf("Slope: %d || RPM: %d\n",(int)slope,(int)motor->currentRPM);
     }
     else if (motor->stepsToComplete < motor->decelStep)
     {
         double slope = ((double)motor->decelStep - motor->stepsToComplete) / motor->decelStep;
         motor->currentRPM = motor->targetRPM - slope * (motor->targetRPM - MIN_RPM);
-        // printf("Slope: %d || RPM: %d\n",(int)slope,(int)motor->currentRPM);
     }
 
     float timePerStep = 60.0 / (motor->currentRPM * motor->stepsPerRev); // Time per step in seconds
@@ -272,8 +270,12 @@ void HomeMotors(void)
     printf("Homing...\n");
     updateStateMachine("Homing");
 
+    // Set positions to max so motor is allowed to move in min direction
+    state.y = motorY.posMax;
+    state.z = motorZ.posMax;
+
     // Move full left/up until LS contact
-    MoveTo(motorY.posMin, motorZ.posMin, 120, 120);
+    MoveTo(motorY.posMin, motorZ.posMin, 100, 100);
     while (motorY.isMoving || motorZ.isMoving)
     {
         HAL_Delay(1);
@@ -281,7 +283,8 @@ void HomeMotors(void)
     HAL_Delay(1000);
 
     // Move right/down by 5mm
-    MoveBy(-1 * (motorY.posMax - motorY.posMin), -1 * (motorZ.posMax - motorZ.posMin), 250, 250);
+    // MoveBy(-1 * (motorY.posMax - motorY.posMin), -1 * (motorZ.posMax - motorZ.posMin), 250, 250);
+    MoveBy(5, 5, 50, 50);
     while (motorY.isMoving || motorZ.isMoving)
     {
         HAL_Delay(1);
@@ -291,7 +294,6 @@ void HomeMotors(void)
     updateStateMachine("Idle");
     state.y = motorY.posMin + 5;
     state.z = motorZ.posMin + 5;
-    PrintState(true);
 }
 
 void StallMotor(Motor *motor)

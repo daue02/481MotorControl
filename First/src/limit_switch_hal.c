@@ -18,8 +18,8 @@ LimitSwitch zSW =
     {
         .name = "zSwitch",
         .port = GPIOB,
-        .Pin_p = GPIO_PIN_5,
-        .Pin_n = GPIO_PIN_6,
+        .Pin_p = GPIO_PIN_6,
+        .Pin_n = GPIO_PIN_5,
 };
 
 /**
