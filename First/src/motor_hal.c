@@ -16,22 +16,6 @@ uint32_t CalculateMotorSpeed(Motor *motor);
 // Motor Objects
 Motor motorY = {
     .name = "motorY",
-    .stepPort = GPIOA,
-    .stepPin = GPIO_PIN_8,
-    .dirPort = GPIOB,
-    .dirPin = GPIO_PIN_10,
-    .sleepPort = GPIOA,
-    .sleepPin = GPIO_PIN_9,
-    .dir = CCW,
-    .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
-    .lead = 1,           // NEED TO UPDATE
-    .posMin = 0,
-    .posMax = 400,
-    .isMoving = 0,
-};
-
-Motor motorZ = {
-    .name = "motorZ",
     .stepPort = GPIOB,
     .stepPin = GPIO_PIN_3,
     .dirPort = GPIOA,
@@ -40,7 +24,23 @@ Motor motorZ = {
     .sleepPin = GPIO_PIN_4,
     .dir = CCW,
     .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
-    .lead = 1,           // Actual: 5mm
+    .lead = 1,           // 8
+    .posMin = 0,
+    .posMax = 400,
+    .isMoving = 0,
+};
+
+Motor motorZ = {
+    .name = "motorZ",
+    .stepPort = GPIOA,
+    .stepPin = GPIO_PIN_7,
+    .dirPort = GPIOC,
+    .dirPin = GPIO_PIN_7,
+    .sleepPort = GPIOA,
+    .sleepPin = GPIO_PIN_6,
+    .dir = CCW,
+    .stepsPerRev = 3200, // 200PPR * sixteenth-stepping
+    .lead = 1,           // 5
     .posMin = -200,
     .posMax = 100,
     .isMoving = 0,
@@ -292,4 +292,15 @@ void HomeMotors(void)
     state.y = motorY.posMin + 5;
     state.z = motorZ.posMin + 5;
     PrintState(true);
+}
+
+void StallMotor(Motor *motor)
+{
+    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
+}
+
+void StallMotors(void)
+{
+    printf("Stalling Y\n");
+    StallMotor(&motorY);
 }

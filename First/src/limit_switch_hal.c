@@ -34,7 +34,7 @@ void Switch_Init(LimitSwitch *limitSW)
     // External interrupt pin configuration
     GPIO_InitStruct.Pin = limitSW->Pin_p | limitSW->Pin_n;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(limitSW->port, &GPIO_InitStruct);
 
     limitSW->Pin_p_state = HAL_GPIO_ReadPin(limitSW->port, limitSW->Pin_p);

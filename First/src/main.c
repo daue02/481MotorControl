@@ -28,17 +28,19 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  // Motors_Init();
-  Drill_Init();
+  Motors_Init();
+  // Drill_Init();
   Limit_Switch_Init();
   HMI_Init();
 
-  // Testubg drill speed control - TO BE VERIFIED ON NEW DRIVER
-  setDrillPower(50);
-  HAL_Delay(1000);
-  setDrillPower(75);
-  HAL_Delay(1000);
-  setDrillPower(0);
+  hmiTesting();
+
+  // StallMotors();
+
+  printf("Moving in 3s\n");
+  HAL_Delay(3000);
+  printf("Moving\n");
+  // MoveTo(10, 10, 200, 200);
 
   while (1)
   {
