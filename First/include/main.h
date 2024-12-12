@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 void ErrorHandler(void);
 
@@ -30,5 +31,21 @@ void ErrorHandler(void);
 #define USARTx_RX_PIN GPIO_PIN_3
 #define USARTx_RX_GPIO_PORT GPIOA
 #define USARTx_RX_AF GPIO_AF7_USART2
+
+/* Definition for USART5 clock resources */
+#define UART5_CLK_ENABLE() __HAL_RCC_UART5_CLK_ENABLE()
+#define UART5_RX_GPIO_CLK_ENABLE() __HAL_RCC_GPIOD_CLK_ENABLE()
+#define UART5_TX_GPIO_CLK_ENABLE() __HAL_RCC_GPIOC_CLK_ENABLE()
+
+#define UART5_FORCE_RESET() __HAL_RCC_UART5_FORCE_RESET()
+#define UART5_RELEASE_RESET() __HAL_RCC_UART5_RELEASE_RESET()
+
+/* Definition for UART5 Pins */
+#define UART5_TX_PIN GPIO_PIN_12
+#define UART5_TX_GPIO_PORT GPIOC
+#define UART5_TX_AF GPIO_AF8_UART5
+#define UART5_RX_PIN GPIO_PIN_2
+#define UART5_RX_GPIO_PORT GPIOD
+#define UART5_RX_AF GPIO_AF8_UART5
 
 #endif /* __MAIN_H */

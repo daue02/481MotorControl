@@ -3,14 +3,15 @@
 #include "drill_hal.h"
 #include "hmi_hal.h"
 #include "motor_hal.h"
+#include "uart.h"
 #include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
-UART_HandleTypeDef huart2;
 
 struct stateMachine state = {0};
+CommandData currentCommand;
 
 static void SystemClockConfig(void);
 void Serial_Init(void);
@@ -28,37 +29,53 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  Motors_Init();
-  // Drill_Init();
+  Drill_Init();
   Limit_Switch_Init();
   HMI_Init();
+  Motors_Init();
+  UART_Init();
 
-  updateStateMachine("Unhomed");
-  SystemHealthCheck();
-  HAL_Delay(3000);
-  HomeMotors();
-  HAL_Delay(3000);
-  SerialDemo();
+  printf("System Initialized\r\n");
 
-  /*
-  updateStateMachine("Unhomed");
+  CommandData cmdData;
 
-  // Wait for the home button to be pushed
-  printf("Waiting to home...\n");
-  while (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin))
-  {
-    HAL_Delay(1);
-  }
-
-  // Home the robot
-  // HomeMotors();
-
-  // Need to create some sort of serial demo
   while (1)
   {
+    if (rxReady)
+    {
+      int status = receiveMessage(&cmdData);
+      if (status == 0)
+      {
+        if (!commandPending)
+        {
+          // Start motor operation asynchronously
+          currentCommand = cmdData;
+          commandPending = true;
+
+          // Call motor functions here with currentCommand.axis and currentCommand.position
+        }
+        else
+        {
+          // Handle case where a command is received while another is pending
+          printf("Command received while another is in progress. Ignoring or queueing.\r\n");
+        }
+      }
+    }
+
+    /*
+      This is to simulate the motor stuff completing elsewhere
+      and then calling the callback function to indicate completion.
+      This should actaully be done in the motor HAL once the movement is complete.
+    */
+    if (commandPending)
+    {
+      HAL_Delay(1000); // Simulate motor operation
+      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
+    }
+
+    // Other work can be done here
     HAL_Delay(1);
   }
-  */
 }
 
 #ifdef __GNUC__
@@ -72,8 +89,6 @@ PUTCHAR_PROTOTYPE
   HAL_UART_Transmit(&UartHandle, (uint8_t *)&ch, 1, 0xFFFF);
   return ch;
 }
-
-//
 
 /**
  * @brief Configures the clock settings.
@@ -149,7 +164,8 @@ void ErrorHandler(void)
  */
 void Serial_Init(void)
 {
-  UartHandle.Instance = USARTx;
+  // Initialize primary UART (e.g., USARTx)
+  UartHandle.Instance = USARTx; // Replace USARTx with your primary UART instance
   UartHandle.Init.BaudRate = 9600;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   UartHandle.Init.StopBits = UART_STOPBITS_1;
