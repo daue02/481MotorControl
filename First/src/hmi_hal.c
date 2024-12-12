@@ -11,8 +11,8 @@ void TIM5_IRQHandler(void);
 buttonLED greenLED =
     {
         .name = "greenLED",
-        .port = GPIOC,
-        .pin = GPIO_PIN_0,
+        .port = GPIOA,
+        .pin = GPIO_PIN_1,
         .mode = GPIO_MODE_OUTPUT_PP,
         .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
@@ -22,7 +22,7 @@ buttonLED redLED =
     {
         .name = "redLED",
         .port = GPIOC,
-        .pin = GPIO_PIN_1,
+        .pin = GPIO_PIN_0,
         .mode = GPIO_MODE_OUTPUT_PP,
         .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
@@ -42,7 +42,7 @@ buttonLED homeButton =
         .port = GPIOB,
         .pin = GPIO_PIN_0,
         .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_PULLUP,
+        .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
@@ -52,7 +52,7 @@ buttonLED auxButton =
         .port = GPIOA,
         .pin = GPIO_PIN_4,
         .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_PULLUP,
+        .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
@@ -226,35 +226,35 @@ void readDigitalPinState(buttonLED butLED)
  */
 void hmiTesting(void)
 {
-    printf("HMI Testing Beginning in 3s\n");
-    HAL_Delay(3000);
+    // printf("HMI Testing Beginning in 3s\n");
+    // HAL_Delay(3000);
 
-    printf("Green Solid\n");
-    changeLEDState(greenLED, "Solid");
-    HAL_Delay(3000);
+    // printf("Green Solid\n");
+    // changeLEDState(greenLED, "Solid");
+    // HAL_Delay(3000);
 
-    printf("Green Slow\n");
-    changeLEDState(greenLED, "Slow");
-    HAL_Delay(3000);
+    // printf("Green Slow\n");
+    // changeLEDState(greenLED, "Slow");
+    // HAL_Delay(3000);
 
-    printf("Green Fast\n");
-    changeLEDState(greenLED, "Fast");
-    HAL_Delay(3000);
+    // printf("Green Fast\n");
+    // changeLEDState(greenLED, "Fast");
+    // HAL_Delay(3000);
 
-    printf("Red Solid\n");
-    changeLEDState(redLED, "Solid");
-    HAL_Delay(3000);
+    // printf("Red Solid\n");
+    // changeLEDState(redLED, "Solid");
+    // HAL_Delay(3000);
 
-    printf("Red Slow\n");
-    changeLEDState(redLED, "Slow");
-    HAL_Delay(3000);
+    // printf("Red Slow\n");
+    // changeLEDState(redLED, "Slow");
+    // HAL_Delay(3000);
 
-    printf("Red Fast\n");
-    changeLEDState(redLED, "Fast");
-    HAL_Delay(3000);
+    // printf("Red Fast\n");
+    // changeLEDState(redLED, "Fast");
+    // HAL_Delay(3000);
 
     int i = 0;
-    for (i = 0; i < 11; i++)
+    for (i = 0; i < 100; i++)
     {
         if (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin) == GPIO_PIN_SET)
         {
@@ -274,7 +274,7 @@ void hmiTesting(void)
             printf("Aux button OFF\n");
         }
         printf("\n");
-        HAL_Delay(2000);
+        HAL_Delay(1000);
     }
     printf("Test complete, please try the RESET button\n");
 }

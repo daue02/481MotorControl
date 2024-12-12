@@ -22,6 +22,7 @@ void Drill_Init(void)
     motorDrill.targetPower = 0;
     motorDrill.accel = 5; // % per sec
     MX_TIM2_Init();
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
 }
 
 /**
@@ -45,6 +46,7 @@ void setDrillPower(int power)
 
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
         HAL_Delay(1 / (motorDrill.accel / 1000));
+        printf("Power level: %d\n", motorDrill.currentPower);
     }
 }
 
