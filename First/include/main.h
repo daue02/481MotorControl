@@ -24,21 +24,11 @@ void ErrorHandler(void);
 #define USARTx_RELEASE_RESET() __HAL_RCC_USART2_RELEASE_RESET()
 
 /* Definition for USARTx Pins */
-#define USARTx_TX_PIN           GPIO_PIN_2
-#define USARTx_TX_GPIO_PORT     GPIOA
-#define USARTx_TX_AF            GPIO_AF7_USART2
-#define USARTx_RX_PIN           GPIO_PIN_3
-#define USARTx_RX_GPIO_PORT     GPIOA
-#define USARTx_RX_AF            GPIO_AF7_USART2
-
-// servo stuff
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
-// !!! DEVELOPMENT VERSIONS !!! //
-// #define REPEATABILITY // For repeatability study
-// #define PRINT_HMI // For testing the HMI reads
-// #define IK_VAL
-// #define GRIPPER_TEST
-// #define REVERSE
+#define USARTx_TX_PIN GPIO_PIN_2
+#define USARTx_TX_GPIO_PORT GPIOA
+#define USARTx_TX_AF GPIO_AF7_USART2
+#define USARTx_RX_PIN GPIO_PIN_3
+#define USARTx_RX_GPIO_PORT GPIOA
+#define USARTx_RX_AF GPIO_AF7_USART2
 
 #endif /* __MAIN_H */

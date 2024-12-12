@@ -3,21 +3,16 @@
 #include "controls.h"
 
 TIM_HandleTypeDef htim5;
-ADC_HandleTypeDef hadc1;
 
 void HMI_Init(void);
 static void TIM5_Init(void);
 void TIM5_IRQHandler(void);
-void buttonDebug(void);
-void Pot_Init(Pot *pot);
-void ADC_Init(void);
-void ADC_Select_Channel(uint32_t channel);
 
 buttonLED greenLED =
     {
         .name = "greenLED",
-        .port = GPIOC,
-        .pin = GPIO_PIN_0,
+        .port = GPIOA,
+        .pin = GPIO_PIN_1,
         .mode = GPIO_MODE_OUTPUT_PP,
         .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
@@ -27,13 +22,13 @@ buttonLED redLED =
     {
         .name = "redLED",
         .port = GPIOC,
-        .pin = GPIO_PIN_1,
+        .pin = GPIO_PIN_0,
         .mode = GPIO_MODE_OUTPUT_PP,
         .pull = GPIO_NOPULL,
         .speed = GPIO_SPEED_FREQ_LOW,
 };
 
-// For TIM5 interrupt
+// For tim5 interrupt
 buttonLED activeLED =
     {
         .mode = GPIO_MODE_OUTPUT_PP,
@@ -44,71 +39,25 @@ buttonLED activeLED =
 buttonLED homeButton =
     {
         .name = "homeButton",
-        .port = GPIOC,
-        .pin = GPIO_PIN_11,
-        .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
-        .speed = GPIO_SPEED_FREQ_LOW,
-};
-
-buttonLED runTestButton =
-    {
-        .name = "runTestButton",
-        .port = GPIOC,
-        .pin = GPIO_PIN_10,
-        .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
-        .speed = GPIO_SPEED_FREQ_LOW,
-};
-
-buttonLED autoManButton =
-    {
-        .name = "autoManButton",
-        .port = GPIOD,
-        .pin = GPIO_PIN_2,
-        .mode = GPIO_MODE_INPUT,
-        .pull = GPIO_NOPULL,
-        .speed = GPIO_SPEED_FREQ_LOW,
-};
-
-Pot yPot =
-    {
-        .name = "xPot",
-        .port = GPIOA,
-        .pin = GPIO_PIN_4,
-        .mode = GPIO_MODE_ANALOG,
-        .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_4};
-
-Pot xPot =
-    {
-        .name = "yPot",
-        .port = GPIOA,
-        .pin = GPIO_PIN_1,
-        .mode = GPIO_MODE_ANALOG,
-        .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_1};
-
-Pot zPot =
-    {
-        .name = "zPot",
         .port = GPIOB,
         .pin = GPIO_PIN_0,
-        .mode = GPIO_MODE_ANALOG,
+        .mode = GPIO_MODE_INPUT,
         .pull = GPIO_NOPULL,
-        .channel = ADC_CHANNEL_8};
+        .speed = GPIO_SPEED_FREQ_LOW,
+};
 
-buttonLED gripButton = {
-    .name = "gripButton",
-    .port = GPIOA,
-    .pin = GPIO_PIN_0,
-    .mode = GPIO_MODE_INPUT,
-    .pull = GPIO_NOPULL,
-    .speed = GPIO_SPEED_FREQ_LOW,
+buttonLED auxButton =
+    {
+        .name = "auxButton",
+        .port = GPIOA,
+        .pin = GPIO_PIN_4,
+        .mode = GPIO_MODE_INPUT,
+        .pull = GPIO_NOPULL,
+        .speed = GPIO_SPEED_FREQ_LOW,
 };
 
 /**
- * @brief Initializes the pins and state of the buttons/LEDs
+ * @brief Initializes the pins and state of a single button or LED
  *
  * @param butLED Button/LED object
  */
@@ -127,24 +76,7 @@ void buttonLED_Init(buttonLED *butLED)
 }
 
 /**
- * @brief Initializes a potentiometer
- *
- * @param pot Potentiometer object
- */
-void Pot_Init(Pot *pot)
-{
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = pot->pin;
-    GPIO_InitStruct.Mode = pot->mode;
-    GPIO_InitStruct.Pull = pot->pull;
-    HAL_GPIO_Init(pot->port, &GPIO_InitStruct);
-
-    pot->alpha = 0.1;
-}
-
-/**
- * @brief Initializes all HMI components, to be used in main
+ * @brief Initializes all buttons/LEDs, to be used in main
  *
  */
 void HMI_Init(void)
@@ -154,131 +86,7 @@ void HMI_Init(void)
     buttonLED_Init(&greenLED);
     buttonLED_Init(&redLED);
     buttonLED_Init(&homeButton);
-    buttonLED_Init(&runTestButton);
-    buttonLED_Init(&autoManButton);
-    buttonLED_Init(&gripButton);
-
-    // Pots
-    Pot_Init(&xPot);
-    Pot_Init(&yPot);
-    Pot_Init(&zPot);
-    ADC_Init();
-
-    zPot.max = 550;
-    zPot.min = 5;
-    zPot.slope = ((motorz.thetaMax - Z_SAFETY_MARGIN) - (motorz.thetaMin + Z_SAFETY_MARGIN)) / (zPot.max - zPot.min);
-    zPot.b = (motorz.thetaMax - Z_SAFETY_MARGIN) - (zPot.slope * zPot.max);
-
-    readAndFilter(&xPot);
-    readAndFilter(&yPot);
-    readAndFilter(&zPot);
-}
-
-/**
- * @brief Initialized the ADC peripheral
- *
- */
-void ADC_Init(void)
-{
-    __HAL_RCC_ADC1_CLK_ENABLE();
-
-    hadc1.Instance = ADC1;
-    hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-    hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-    hadc1.Init.ScanConvMode = DISABLE;
-    hadc1.Init.ContinuousConvMode = DISABLE;
-    hadc1.Init.DiscontinuousConvMode = DISABLE;
-    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-    hadc1.Init.NbrOfConversion = 1;
-    hadc1.Init.DMAContinuousRequests = DISABLE;
-    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-    if (HAL_ADC_Init(&hadc1) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = ADC_CHANNEL_1;
-    sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-}
-
-/**
- * @brief Sets the channel for the ADC read
- *
- * @param channel ADC channel
- */
-void ADC_Select_Channel(uint32_t channel)
-{
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = channel;
-    sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-    {
-        ErrorHandler();
-    }
-}
-
-/**
- * @brief Performs an analog read of a pot.
- *
- * @param pot Pot object
- * @return uint32_t analog read value
- */
-uint32_t Read_Pot(Pot *pot)
-{
-    ADC_Select_Channel(pot->channel);
-    HAL_Delay(1);
-
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
-    {
-        return HAL_ADC_GetValue(&hadc1);
-    }
-    return 0; // Return 0 if failed
-}
-
-/**
- * @brief Reads the value of a potentiometer and low pass filters the value.
- *
- * @param pot Potentiometer object
- */
-void readAndFilter(Pot *pot)
-{
-    pot->value = Read_Pot(pot);
-    if (!pot->filtered)
-    {
-        pot->filtered = pot->value;
-    }
-    else
-    {
-        // Low pass filter
-        pot->filtered = pot->filtered + (((pot->value - pot->filtered) * pot->alpha));
-
-        // Calculate Z Pos
-        if (pot->name == zPot.name)
-        {
-            // Determine desired Z position
-            zPot.pos = motorz.thetaMax - (zPot.slope * zPot.filtered + zPot.b);
-
-            // Ensure desired position is within limits
-            if (zPot.pos > (motorz.thetaMax - Z_SAFETY_MARGIN))
-            {
-                zPot.pos = (motorz.thetaMax - Z_SAFETY_MARGIN) - 1;
-            }
-            else if (zPot.pos < (motorz.thetaMin + Z_SAFETY_MARGIN))
-            {
-                zPot.pos = (motorz.thetaMin + Z_SAFETY_MARGIN) + 1;
-            }
-        }
-    }
+    buttonLED_Init(&auxButton);
 }
 
 static void TIM5_Init(void)
@@ -308,6 +116,12 @@ void TIM5_IRQHandler(void)
     }
 }
 
+/**
+ * @brief Flashes an LED at a slow (0.5s) or fast (0.1s) pace
+ *
+ * @param butLED LED to flash
+ * @param speed period in [s]
+ */
 void flashLED(buttonLED butLED, double speed)
 {
     double timerPeriod = 1000000 * speed; // 1MHz clock * Speed
@@ -318,12 +132,22 @@ void flashLED(buttonLED butLED, double speed)
     HAL_TIM_Base_Start_IT(&htim5);
 }
 
+/**
+ * @brief Turns an LED on
+ *
+ * @param butLED LED to turn on
+ */
 void solidLED(buttonLED butLED)
 {
     HAL_TIM_Base_Stop_IT(&htim5);
     HAL_GPIO_WritePin(butLED.port, butLED.pin, GPIO_PIN_SET);
 }
 
+/**
+ * @brief Turns an LED off
+ *
+ * @param butLED LED to turn off
+ */
 void stopLED(buttonLED butLED)
 {
     HAL_TIM_Base_Stop_IT(&htim5);
@@ -376,6 +200,11 @@ void changeLEDState(buttonLED butLED, const char *ledMode)
     }
 }
 
+/**
+ * @brief Reads the digital state of a button
+ *
+ * @param butLED Button to read
+ */
 void readDigitalPinState(buttonLED butLED)
 {
     GPIO_PinState button_state = HAL_GPIO_ReadPin(butLED.port, butLED.pin);
@@ -383,26 +212,69 @@ void readDigitalPinState(buttonLED butLED)
 
     if (button_state == GPIO_PIN_SET)
     {
-        printf("%s INACTIVE\n\r", button_name);
+        printf("%s INACTIVE\n", button_name);
     }
     else if (button_state == GPIO_PIN_RESET)
     {
-        printf("%s ACTIVE\n\r", button_name);
+        printf("%s ACTIVE\n", button_name);
     }
 }
 
 /**
- * @brief Print pin state of 3 buttons to console for debugging
+ * @brief Debug to test all lights and buttons of the HMI
  *
  */
-void buttonDebug(void)
+void hmiTesting(void)
 {
-    while (1)
+    // printf("HMI Testing Beginning in 3s\n");
+    // HAL_Delay(3000);
+
+    // printf("Green Solid\n");
+    // changeLEDState(greenLED, "Solid");
+    // HAL_Delay(3000);
+
+    // printf("Green Slow\n");
+    // changeLEDState(greenLED, "Slow");
+    // HAL_Delay(3000);
+
+    // printf("Green Fast\n");
+    // changeLEDState(greenLED, "Fast");
+    // HAL_Delay(3000);
+
+    // printf("Red Solid\n");
+    // changeLEDState(redLED, "Solid");
+    // HAL_Delay(3000);
+
+    // printf("Red Slow\n");
+    // changeLEDState(redLED, "Slow");
+    // HAL_Delay(3000);
+
+    // printf("Red Fast\n");
+    // changeLEDState(redLED, "Fast");
+    // HAL_Delay(3000);
+
+    int i = 0;
+    for (i = 0; i < 100; i++)
     {
-        readDigitalPinState(homeButton);
-        readDigitalPinState(runTestButton);
-        readDigitalPinState(autoManButton);
-        printf("\n\r");
-        HAL_Delay(2000);
+        if (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin) == GPIO_PIN_SET)
+        {
+            printf("Home button ON\n");
+        }
+        else
+        {
+            printf("Home button OFF\n");
+        }
+
+        if (HAL_GPIO_ReadPin(auxButton.port, auxButton.pin) == GPIO_PIN_SET)
+        {
+            printf("Aux button ON\n");
+        }
+        else
+        {
+            printf("Aux button OFF\n");
+        }
+        printf("\n");
+        HAL_Delay(1000);
     }
+    printf("Test complete, please try the RESET button\n");
 }
