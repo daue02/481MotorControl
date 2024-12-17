@@ -33,7 +33,8 @@ typedef struct
     double currentRPM;            // The motors current rpm
     double targetRPM;             // The steady-state target rpm
     bool isMoving;                // Is the motor moving?
-    LimitSwitch limitSwitch;      // Limit switch associated with the motor
+    InterruptSwitch posLS;        // Positive limit switch associated with the motor
+    InterruptSwitch negLS;        // Positive limit switch associated with the motor
 } Motor;
 
 extern Motor motorY;

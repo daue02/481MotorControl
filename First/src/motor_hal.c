@@ -82,8 +82,10 @@ void Motors_Init(void)
     TIM3_Init();
     TIM4_Init();
 
-    motorY.limitSwitch = ySW;
-    motorZ.limitSwitch = zSW;
+    motorY.posLS = ySW_pos;
+    motorY.negLS = ySW_neg;
+    motorZ.posLS = zSW_pos;
+    motorZ.negLS = zSW_neg;
 }
 
 /**

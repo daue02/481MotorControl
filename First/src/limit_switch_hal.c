@@ -4,41 +4,66 @@
 #include "controls.h"
 
 void EXTI9_5_IRQHandler(void);
-void Switch_Init(LimitSwitch *limitSW);
+void Switch_Init(InterruptSwitch *interruptSW);
 
-LimitSwitch ySW =
+InterruptSwitch ySW_pos =
     {
-        .name = "ySwitch",
+        .name = "ySwitchPos",
         .port = GPIOB,
-        .Pin_p = GPIO_PIN_8,
-        .Pin_n = GPIO_PIN_9,
+        .pin = GPIO_PIN_8,
 };
 
-LimitSwitch zSW =
+InterruptSwitch ySW_neg =
     {
-        .name = "zSwitch",
+        .name = "ySwitchNeg",
         .port = GPIOB,
-        .Pin_p = GPIO_PIN_6,
-        .Pin_n = GPIO_PIN_5,
+        .pin = GPIO_PIN_9,
+};
+
+InterruptSwitch zSW_pos =
+    {
+        .name = "zSwitchPos",
+        .port = GPIOB,
+        .pin = GPIO_PIN_6,
+};
+
+InterruptSwitch zSW_neg =
+    {
+        .name = "zSwitchNeg",
+        .port = GPIOB,
+        .pin = GPIO_PIN_5,
+};
+
+InterruptSwitch piSW =
+    {
+        .name = "piSwitch",
+        .port = GPIOB,
+        .pin = GPIO_PIN_7,
 };
 
 /**
- * @brief Initializes the pins and state of the limit switch.
+ * @brief Initializes the pins and state of the limit switch / pi interrupt.
  *
- * @param limitSW limit switch object.
+ * @param InterruptSwitch Interrupt switch object.
  */
-void Switch_Init(LimitSwitch *limitSW)
+void Switch_Init(InterruptSwitch *interruptSW)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     // External interrupt pin configuration
-    GPIO_InitStruct.Pin = limitSW->Pin_p | limitSW->Pin_n;
+    GPIO_InitStruct.Pin = interruptSW->pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(limitSW->port, &GPIO_InitStruct);
+    if (interruptSW->name == piSW.name)
+    {
+        GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Not on a debounce circuit like the other switches
+    }
+    else
+    {
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+    }
+    HAL_GPIO_Init(interruptSW->port, &GPIO_InitStruct);
 
-    limitSW->Pin_p_state = HAL_GPIO_ReadPin(limitSW->port, limitSW->Pin_p);
-    limitSW->Pin_n_state = HAL_GPIO_ReadPin(limitSW->port, limitSW->Pin_n);
+    interruptSW->Pin_state = HAL_GPIO_ReadPin(interruptSW->port, interruptSW->pin);
 }
 
 /**
@@ -47,8 +72,11 @@ void Switch_Init(LimitSwitch *limitSW)
  */
 void Limit_Switch_Init(void)
 {
-    Switch_Init(&ySW);
-    Switch_Init(&zSW);
+    Switch_Init(&ySW_pos);
+    Switch_Init(&ySW_neg);
+    Switch_Init(&zSW_pos);
+    Switch_Init(&zSW_neg);
+    Switch_Init(&piSW);
 
     // Enable and set EXTI line Interrupt to the given priority
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
@@ -61,13 +89,15 @@ void Limit_Switch_Init(void)
  */
 void EXTI9_5_IRQHandler(void)
 {
-    GPIO_PinState yPin_p_state = HAL_GPIO_ReadPin(ySW.port, ySW.Pin_p);
-    GPIO_PinState yPin_n_state = HAL_GPIO_ReadPin(ySW.port, ySW.Pin_n);
+    GPIO_PinState yPin_p_state = HAL_GPIO_ReadPin(ySW_pos.port, ySW_pos.pin);
+    GPIO_PinState yPin_n_state = HAL_GPIO_ReadPin(ySW_neg.port, ySW_neg.pin);
 
-    GPIO_PinState zPin_p_state = HAL_GPIO_ReadPin(zSW.port, zSW.Pin_p);
-    GPIO_PinState zPin_n_state = HAL_GPIO_ReadPin(zSW.port, zSW.Pin_n);
+    GPIO_PinState zPin_p_state = HAL_GPIO_ReadPin(zSW_pos.port, zSW_pos.pin);
+    GPIO_PinState zPin_n_state = HAL_GPIO_ReadPin(zSW_neg.port, zSW_neg.pin);
 
-    if (ySW.Pin_p_state != yPin_p_state)
+    GPIO_PinState piSW_state = HAL_GPIO_ReadPin(piSW.port, piSW.pin);
+
+    if (ySW_pos.Pin_state != yPin_p_state)
     {
         // Switch is open and limit switch is being engaged
         if (yPin_p_state)
@@ -80,10 +110,10 @@ void EXTI9_5_IRQHandler(void)
         {
             printf("Y+ Disengaged\n");
         }
-        HAL_GPIO_EXTI_IRQHandler(ySW.Pin_p);
-        ySW.Pin_p_state = yPin_p_state;
+        HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin);
+        ySW_pos.Pin_state = yPin_p_state;
     }
-    else if (ySW.Pin_n_state != yPin_n_state)
+    else if (ySW_neg.Pin_state != yPin_n_state)
     {
         // Switch is open and limit switch is being engaged
         if (yPin_n_state)
@@ -96,11 +126,11 @@ void EXTI9_5_IRQHandler(void)
         {
             printf("Y- Disengaged\n");
         }
-        HAL_GPIO_EXTI_IRQHandler(ySW.Pin_n);
-        ySW.Pin_n_state = yPin_n_state;
+        HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);
+        ySW_neg.Pin_state = yPin_n_state;
     }
 
-    if (zSW.Pin_p_state != zPin_p_state)
+    if (zSW_pos.Pin_state != zPin_p_state)
     {
         // Switch is open and limit switch is being engaged
         if (zPin_p_state)
@@ -113,10 +143,10 @@ void EXTI9_5_IRQHandler(void)
         {
             printf("Z+ Disengaged\n");
         }
-        HAL_GPIO_EXTI_IRQHandler(zSW.Pin_p);
-        zSW.Pin_p_state = zPin_p_state;
+        HAL_GPIO_EXTI_IRQHandler(zSW_pos.pin);
+        zSW_pos.Pin_state = zPin_p_state;
     }
-    else if (zSW.Pin_n_state != zPin_n_state)
+    else if (zSW_neg.Pin_state != zPin_n_state)
     {
         // Switch is open and limit switch is being engaged
         if (zPin_n_state)
@@ -129,7 +159,24 @@ void EXTI9_5_IRQHandler(void)
         {
             printf("Z- Disengaged\n");
         }
-        HAL_GPIO_EXTI_IRQHandler(zSW.Pin_n);
-        zSW.Pin_n_state = zPin_n_state;
+        HAL_GPIO_EXTI_IRQHandler(zSW_neg.pin);
+        zSW_neg.Pin_state = zPin_n_state;
+    }
+
+    if (piSW.Pin_state != piSW_state)
+    {
+        // Pi starts sending interrurpt
+        if (piSW_state)
+        {
+            ErrorHandler();
+            printf("Interrupt received from Pi\n");
+        }
+        // Pi stops sending interrupt
+        else
+        {
+            printf("Interrupt from Pi cancelled\n");
+        }
+        HAL_GPIO_EXTI_IRQHandler(piSW.pin);
+        piSW.Pin_state = piSW_state;
     }
 }

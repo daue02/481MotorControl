@@ -38,7 +38,6 @@ int main(void)
   printf("System Initialized\r\n");
 
   CommandData cmdData;
-  currentCommand.position = 70; // For testing without Pi
 
   while (1)
   {
@@ -282,19 +281,19 @@ void SerialDemo(void)
 void SystemHealthCheck(void)
 {
   // Check that all limit switches are closed (NC switched).
-  if (ySW.Pin_p_state)
+  if (ySW_pos.Pin_state)
   {
     printf("Error: check Y+ sw\n");
   }
-  else if (ySW.Pin_n_state)
+  else if (ySW_neg.Pin_state)
   {
     printf("Error: check Y- sw\n");
   }
-  else if (zSW.Pin_p_state)
+  else if (zSW_pos.Pin_state)
   {
     printf("Error: check Z+ sw\n");
   }
-  else if (zSW.Pin_n_state)
+  else if (zSW_neg.Pin_state)
   {
     printf("Error: check Z- sw\n");
   }
