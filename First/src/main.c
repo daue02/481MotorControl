@@ -42,22 +42,6 @@ int main(void)
 
   while (1)
   {
-    SystemHealthCheck();
-    HomeMotors();
-    updateStateMachine("Positioning");
-    MoveTo(currentCommand.position, -25);
-    updateStateMachine("Drilling");
-    // Start the drill motion here
-    MoveTo(currentCommand.position, 100);
-    // Stop the drill motion here
-    updateStateMachine("Positioning");
-    HAL_Delay(500);
-    MoveTo(currentCommand.position, -25);
-    MoveTo(50, -190);
-    // Would add the bit-clearing stuff here
-    updateStateMachine("Waiting");
-
-    /*
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -67,22 +51,29 @@ int main(void)
         {
           currentCommand = cmdData;
           commandPending = true;
-
-          // Hard-coded sequence. Will need to check actual heights/speeds when testing
-          SystemHealthCheck();
-          HomeMotors();
-          updateStateMachine("Positioning");
-          MoveTo(currentCommand.position, -25);
-          updateStateMachine("Drilling");
-          // Start the drill motion here
-          MoveTo(currentCommand.position, 100);
-          // Stop the drill motion here
-          updateStateMachine("Positioning");
-          HAL_Delay(500);
-          MoveTo(currentCommand.position, -25);
-          MoveTo(50, -190);
-          // Would add the bit-clearing stuff here
-          updateStateMachine("Waiting");
+          if (1) // Automatic sequence
+          {
+            // Hard-coded sequence. Will need to check actual heights/speeds when testing
+            printf("Automatic sequence activated\n");
+            HomeMotors();
+            updateStateMachine("Positioning");
+            MoveTo(currentCommand.position, -25);
+            updateStateMachine("Drilling");
+            // Start the drill motion here
+            MoveTo(currentCommand.position, 100);
+            // Stop the drill motion here
+            updateStateMachine("Positioning");
+            HAL_Delay(500);
+            MoveTo(currentCommand.position, -25);
+            MoveTo(50, -190);
+            // Would add the bit-clearing stuff here
+            updateStateMachine("Waiting");
+          }
+          else // Manual sequence
+          {
+            printf("Manual sequence activated\n");
+            // Manual mode to be added
+          }
         }
         else
         {
@@ -103,7 +94,6 @@ int main(void)
     }
 
     HAL_Delay(1);
-    */
   }
 }
 
