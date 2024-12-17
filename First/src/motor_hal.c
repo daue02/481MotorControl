@@ -282,6 +282,23 @@ void StopMotors(void)
 }
 
 /**
+ * @brief Checks if either motor is moving
+ * @return True if either is moving
+ *
+ */
+bool motorsMoving(void)
+{
+    if (motorY.isMoving || motorZ.isMoving)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/**
  * @brief Homes the motors.
  *
  */
@@ -295,37 +312,22 @@ void HomeMotors(void)
     state.z = motorZ.posMax;
 
     // Move full left/up until LS contact
-    MoveTo(motorY.posMin, motorZ.posMin, 100, 100);
-    while (motorY.isMoving || motorZ.isMoving)
+    MoveTo(motorY.posMin, motorZ.posMin);
+    while (motorsMoving)
     {
         HAL_Delay(1);
     }
     HAL_Delay(1000);
 
     // Move right/down by 5mm
-    // MoveBy(-1 * (motorY.posMax - motorY.posMin), -1 * (motorZ.posMax - motorZ.posMin), 250, 250);
-    MoveBy(5, 5, 25, 25);
-    while (motorY.isMoving || motorZ.isMoving)
+    MoveBy(5, 5);
+    while (motorsMoving)
     {
         HAL_Delay(1);
     }
 
     // Update the state machine
-    updateStateMachine("Idle");
+    updateStateMachine("Waiting");
     state.y = motorY.posMin + 7.00; // As measured for 5mm command 22-NOV-2024
     state.z = motorZ.posMin + 6.82; // As measured for 5mm command 22-NOV-2024
-}
-
-// Use to set current limits on DRV8825 drivers
-void StallMotor(Motor *motor)
-{
-    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
-}
-
-void StallMotors(void)
-{
-    printf("Stalling Y\n");
-    StallMotor(&motorY);
-    // printf("Stalling Z\n");
-    // StallMotor(&motorZ);
 }

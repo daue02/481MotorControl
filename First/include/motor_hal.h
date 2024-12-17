@@ -41,9 +41,8 @@ extern Motor motorZ;
 
 void Motors_Init(void);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
-void HomeMotors(void);
 void StopMotors(void);
-void SpinDrill(int power);
-void StallMotors(void);
+bool motorsMoving(void);
+void HomeMotors(void);
 
 #endif
