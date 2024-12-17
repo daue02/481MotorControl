@@ -313,7 +313,7 @@ void HomeMotors(void)
 
     // Move full left/up until LS contact
     MoveTo(motorY.posMin, motorZ.posMin);
-    while (motorsMoving)
+    while (motorsMoving())
     {
         HAL_Delay(1);
     }
@@ -321,7 +321,7 @@ void HomeMotors(void)
 
     // Move right/down by 5mm
     MoveBy(5, 5);
-    while (motorsMoving)
+    while (motorsMoving())
     {
         HAL_Delay(1);
     }

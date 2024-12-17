@@ -20,6 +20,7 @@ void MoveTo(double y, double z)
     if (y > motorY.posMax || y < motorY.posMin || z > motorZ.posMax || z < motorZ.posMin)
     {
         printf("Move is outside of range!\n");
+        ErrorHandler();
     }
     else
     {
@@ -31,6 +32,11 @@ void MoveTo(double y, double z)
         state.z += deltaZ;
     }
 
+    // Wait for movement before accepting more
+    while (motorsMoving())
+    {
+        HAL_Delay(1);
+    }
     PrintState(true);
 }
 
@@ -56,9 +62,9 @@ void MoveBy(double rel_y, double rel_z)
  */
 double calculateRPM(double delta)
 {
-    if (state.drilling || state.homing)
+    if (state.drilling)
     {
-        return 50.0;
+        return 100.0;
     }
     else if (state.positioning)
     {
@@ -68,12 +74,16 @@ double calculateRPM(double delta)
         }
         else if (abs(delta) < 75)
         {
-            return 250.0;
+            return 200.0;
         }
         else
         {
-            return 500.0;
+            return 300.0;
         }
+    }
+    else if (state.homing)
+    {
+        return 150.0;
     }
     else
     {

@@ -38,9 +38,26 @@ int main(void)
   printf("System Initialized\r\n");
 
   CommandData cmdData;
+  currentCommand.position = 70; // For testing without Pi
 
   while (1)
   {
+    SystemHealthCheck();
+    HomeMotors();
+    updateStateMachine("Positioning");
+    MoveTo(currentCommand.position, -25);
+    updateStateMachine("Drilling");
+    // Start the drill motion here
+    MoveTo(currentCommand.position, 100);
+    // Stop the drill motion here
+    updateStateMachine("Positioning");
+    HAL_Delay(500);
+    MoveTo(currentCommand.position, -25);
+    MoveTo(50, -190);
+    // Would add the bit-clearing stuff here
+    updateStateMachine("Waiting");
+
+    /*
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -59,10 +76,10 @@ int main(void)
           updateStateMachine("Drilling");
           // Start the drill motion here
           MoveTo(currentCommand.position, 100);
-          HAL_Delay(500);
-          MoveTo(currentCommand.position, -25);
           // Stop the drill motion here
           updateStateMachine("Positioning");
+          HAL_Delay(500);
+          MoveTo(currentCommand.position, -25);
           MoveTo(50, -190);
           // Would add the bit-clearing stuff here
           updateStateMachine("Waiting");
@@ -78,7 +95,7 @@ int main(void)
     // Wait until motor movement is complete before starting the next command
     if (commandPending)
     {
-      if (motorsMoving)
+      if (motorsMoving())
       {
         HAL_Delay(1);
       }
@@ -86,6 +103,7 @@ int main(void)
     }
 
     HAL_Delay(1);
+    */
   }
 }
 
@@ -260,7 +278,7 @@ void SerialDemo(void)
     double y = 0, z = 0;
     RecieveCoordinates(&y, &z);
     MoveTo(y, z);
-    while (motorsMoving)
+    while (motorsMoving())
     {
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
