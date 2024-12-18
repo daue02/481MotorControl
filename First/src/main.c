@@ -48,11 +48,32 @@ int main(void)
       {
         if (!commandPending)
         {
-          // Start motor operation asynchronously
           currentCommand = cmdData;
           commandPending = true;
-
-          // Call motor functions here with currentCommand.axis and currentCommand.position
+          if (1) // Automatic sequence
+          {
+            // Hard-coded sequence. Will need to check actual heights/speeds when testing
+            printf("Automatic sequence activated\n");
+            SystemHealthCheck();
+            HomeMotors();
+            updateStateMachine("Positioning");
+            MoveTo(currentCommand.position, -25);
+            updateStateMachine("Drilling");
+            // Start the drill motion here
+            MoveTo(currentCommand.position, 100);
+            // Stop the drill motion here
+            updateStateMachine("Positioning");
+            HAL_Delay(500);
+            MoveTo(currentCommand.position, -25);
+            MoveTo(50, -190);
+            // Would add the bit-clearing stuff here
+            updateStateMachine("Waiting");
+          }
+          else // Manual sequence
+          {
+            printf("Manual sequence activated\n");
+            // Manual mode to be added
+          }
         }
         else
         {
@@ -62,18 +83,16 @@ int main(void)
       }
     }
 
-    /*
-      This is to simulate the motor stuff completing elsewhere
-      and then calling the callback function to indicate completion.
-      This should actaully be done in the motor HAL once the movement is complete.
-    */
+    // Wait until motor movement is complete before starting the next command
     if (commandPending)
     {
-      HAL_Delay(1000); // Simulate motor operation
+      if (motorsMoving())
+      {
+        HAL_Delay(1);
+      }
       motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
 
-    // Other work can be done here
     HAL_Delay(1);
   }
 }
@@ -248,8 +267,8 @@ void SerialDemo(void)
   {
     double y = 0, z = 0;
     RecieveCoordinates(&y, &z);
-    MoveTo(y, z, 250.0, 250.0);
-    while (motorY.isMoving || motorZ.isMoving)
+    MoveTo(y, z);
+    while (motorsMoving())
     {
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
@@ -263,24 +282,25 @@ void SerialDemo(void)
 void SystemHealthCheck(void)
 {
   // Check that all limit switches are closed (NC switched).
-  if (ySW.Pin_p_state)
+  if (ySW_pos.Pin_state)
   {
     printf("Error: check Y+ sw\n");
   }
-  else if (ySW.Pin_n_state)
+  else if (ySW_neg.Pin_state)
   {
     printf("Error: check Y- sw\n");
   }
-  else if (zSW.Pin_p_state)
+  else if (zSW_pos.Pin_state)
   {
     printf("Error: check Z+ sw\n");
   }
-  else if (zSW.Pin_n_state)
+  else if (zSW_neg.Pin_state)
   {
     printf("Error: check Z- sw\n");
   }
   else
   {
+    updateStateMachine("Unhomed");
     return;
   }
   ErrorHandler();

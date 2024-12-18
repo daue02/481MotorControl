@@ -19,11 +19,12 @@
  */
 struct stateMachine
 {
-    bool faulted;     //  Is the robot stuck in a fault state (Ex. Failed Health Check)
-    bool homed;       // Has the robot been homed
-    bool homing;      // Is the robot currently homing
-    bool positioning; // Are the YZ motors running
-    bool drilling;    // Is the drill motor running
+    bool faulted;     // Failed health check                     - RED SLOW
+    bool unhomed;     // Waiting to home                         - RED SOLID
+    bool homing;      // Currently homing                        - RED FAST
+    bool waiting;     // Homed and ready for command             - GREEN SOLID
+    bool positioning; // Moving above the ground                 - GREEN SLOW
+    bool drilling;    // Moving below the ground or cleaning bit - GREEN FAST
 
     double y; // Y position of end effector
     double z; // Z position of end effector
@@ -32,8 +33,8 @@ struct stateMachine
 extern struct stateMachine state;
 
 void PrintState(bool posOnly);
-void MoveTo(double y, double z, double yRPM, double zRPM);
-void MoveBy(double rel_y, double rel_z, double yRPM, double zRPM);
+void MoveTo(double y, double z);
+void MoveBy(double rel_y, double rel_z);
 void PrintCartesianCoords(double y, double z);
 void updateStateMachine(const char *toState);
 

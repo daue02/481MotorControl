@@ -33,7 +33,8 @@ typedef struct
     double currentRPM;            // The motors current rpm
     double targetRPM;             // The steady-state target rpm
     bool isMoving;                // Is the motor moving?
-    LimitSwitch limitSwitch;      // Limit switch associated with the motor
+    InterruptSwitch posLS;        // Positive limit switch associated with the motor
+    InterruptSwitch negLS;        // Positive limit switch associated with the motor
 } Motor;
 
 extern Motor motorY;
@@ -41,9 +42,8 @@ extern Motor motorZ;
 
 void Motors_Init(void);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
-void HomeMotors(void);
 void StopMotors(void);
-void SpinDrill(int power);
-void StallMotors(void);
+bool motorsMoving(void);
+void HomeMotors(void);
 
 #endif

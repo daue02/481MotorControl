@@ -7,14 +7,15 @@ typedef struct
 {
     const char *name;
     GPIO_TypeDef *port;
-    uint16_t Pin_p;
-    GPIO_PinState Pin_p_state;
-    uint16_t Pin_n;
-    GPIO_PinState Pin_n_state;
-} LimitSwitch;
+    uint16_t pin;
+    GPIO_PinState Pin_state;
+} InterruptSwitch;
 
-extern LimitSwitch ySW;
-extern LimitSwitch zSW;
+extern InterruptSwitch ySW_neg;
+extern InterruptSwitch ySW_pos;
+extern InterruptSwitch zSW_neg;
+extern InterruptSwitch zSW_pos;
+extern InterruptSwitch piSW;
 
 void Limit_Switch_Init(void);
 
