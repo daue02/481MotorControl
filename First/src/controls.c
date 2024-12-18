@@ -70,15 +70,15 @@ double calculateRPM(double delta)
     {
         if (abs(delta) < 25.0)
         {
-            return 100.0;
+            return 150.0;
         }
         else if (abs(delta) < 75)
         {
-            return 200.0;
+            return 300.0;
         }
         else
         {
-            return 300.0;
+            return 400.0;
         }
     }
     else if (state.homing)

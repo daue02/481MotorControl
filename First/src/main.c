@@ -54,6 +54,7 @@ int main(void)
           {
             // Hard-coded sequence. Will need to check actual heights/speeds when testing
             printf("Automatic sequence activated\n");
+            SystemHealthCheck();
             HomeMotors();
             updateStateMachine("Positioning");
             MoveTo(currentCommand.position, -25);
