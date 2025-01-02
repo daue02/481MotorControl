@@ -14,6 +14,7 @@ struct stateMachine state = {0};
 CommandData currentCommand;
 
 static void SystemClockConfig(void);
+void UART_Test(CommandData *cmdData);
 void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
@@ -38,6 +39,9 @@ int main(void)
   printf("System Initialized\r\n");
 
   CommandData cmdData;
+
+  // Blocking connection test
+  // UART_Test(&cmdData);
 
   while (1)
   {
@@ -174,6 +178,24 @@ void ErrorHandler(void)
   updateStateMachine("Faulted");
   while (1)
   {
+  }
+}
+
+void UART_Test(CommandData *cmdData)
+{
+  // uart test
+  while (1)
+  {
+    if (rxReady)
+    {
+      int status = receiveMessage(cmdData);
+      if (status == 0)
+      {
+        printf("Received Command: Axis %d, Position %d\r\n", cmdData->axis, cmdData->position);
+        motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
+      }
+    }
+    HAL_Delay(1);
   }
 }
 
