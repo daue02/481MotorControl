@@ -5,7 +5,7 @@
 
 double calculateRPM(double delta);
 void PrintState(bool posOnly);
-
+struct stateMachine state = {0};
 /**
  * @brief Move the robot to the x and y coordinates.
  *

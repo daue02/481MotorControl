@@ -35,15 +35,16 @@ void MX_TIM2_Init(void)
   TIM_Encoder_InitTypeDef sConfig = {0};
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature
 
-  sConfig.IC1Polarity = TIM_ICPOLARITY_BOTHEDGE;
+  // Assign new channels
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING; // Use PA1 (TIM2_CH2) as CH1
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 0x0f; // Add a filter to suppress noise
 
-  sConfig.IC2Polarity = TIM_ICPOLARITY_BOTHEDGE;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING; // Use PA2 (TIM2_CH3) as CH2
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 0x0f; // Add a filter to suppress noise
 
   HAL_TIM_Encoder_Init(&htim2, &sConfig);
   HAL_TIM_Base_Start(&htim2);
@@ -53,13 +54,15 @@ void Encoder_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  // Configure pins for encoder signals (A0, A1 -> TIM2_CH1, TIM2_CH2)
-  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+  // Configure pins for new encoder signals (PA1, PA2 -> TIM2_CH2, TIM2_CH3)
+  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1; // PA1 -> TIM2_CH2, PA2 -> TIM2_CH3
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP; // Use pull-up for stability
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2; // Alternate function for TIM2
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  MX_TIM2_Init();
 }
 
 int main(void)
@@ -72,6 +75,7 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   UART_Init();
+  Encoder_Init();
 
   printf("System Initialized\r\n");
 
@@ -82,8 +86,9 @@ int main(void)
 
   while (1)
   {
-    int32_t encoder_position = (int32_t)__HAL_TIM_GET_COUNTER(&htim2);
+    int32_t encoder_position = (int16_t)__HAL_TIM_GET_COUNTER(&htim2);
     printf("Encoder Position: %d\r\n", encoder_position);
+    HAL_Delay(100);
   }
 }
 
@@ -264,21 +269,21 @@ void RecieveCoordinates(double *y, double *z)
   printf("\n");
 }
 
-/**
- * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
- *
- */
-void SerialDemo(void)
-{
-  printf("---------- Entered Serial Demo ----------\n");
-  while (1)
-  {
-    double y = 0, z = 0;
-    RecieveCoordinates(&y, &z);
-    MoveTo(y, z);
-    while (motorsMoving())
-    {
-      HAL_Delay(1); // Prevent user from sending another request while still moving
-    }
-  }
-}
+// /**
+//  * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
+//  *
+//  */
+// void SerialDemo(void)
+// {
+//   printf("---------- Entered Serial Demo ----------\n");
+//   while (1)
+//   {
+//     double y = 0, z = 0;
+//     RecieveCoordinates(&y, &z);
+//     MoveTo(y, z);
+//     while (motorsMoving())
+//     {
+//       HAL_Delay(1); // Prevent user from sending another request while still moving
+//     }
+//   }
+// }
