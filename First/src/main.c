@@ -1,16 +1,15 @@
 #include "main.h"
-#include "controls.h"
-#include "drill_hal.h"
-#include "hmi_hal.h"
-#include "motor_hal.h"
+// #include "controls.h"
+// #include "drill_hal.h"
+// #include "hmi_hal.h"
+// #include "motor_hal.h"
 #include "uart.h"
-#include "limit_switch_hal.h"
+// #include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
 
-struct stateMachine state = {0};
 CommandData currentCommand;
 
 static void SystemClockConfig(void);
@@ -19,7 +18,49 @@ void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
-void SystemHealthCheck(void);
+
+// Encoder
+TIM_HandleTypeDef htim2;
+void MX_TIM2_Init(void)
+{
+  __HAL_RCC_TIM2_CLK_ENABLE(); // Enable timer clock
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0; // No prescaler for full resolution
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 0xFFFF; // Max value for 16-bit counter
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature
+
+  sConfig.IC1Polarity = TIM_ICPOLARITY_BOTHEDGE;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+
+  sConfig.IC2Polarity = TIM_ICPOLARITY_BOTHEDGE;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+
+  HAL_TIM_Encoder_Init(&htim2, &sConfig);
+  HAL_TIM_Base_Start(&htim2);
+}
+
+void Encoder_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  // Configure pins for encoder signals (A0, A1 -> TIM2_CH1, TIM2_CH2)
+  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
 
 int main(void)
 {
@@ -30,10 +71,6 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  Drill_Init();
-  Limit_Switch_Init();
-  HMI_Init();
-  Motors_Init();
   UART_Init();
 
   printf("System Initialized\r\n");
@@ -45,59 +82,8 @@ int main(void)
 
   while (1)
   {
-    if (rxReady)
-    {
-      int status = receiveMessage(&cmdData);
-      if (status == 0)
-      {
-        if (!commandPending)
-        {
-          currentCommand = cmdData;
-          commandPending = true;
-          if (1) // Automatic sequence
-          {
-            // Hard-coded sequence. Will need to check actual heights/speeds when testing
-            printf("Automatic sequence activated\n");
-            SystemHealthCheck();
-            HomeMotors();
-            updateStateMachine("Positioning");
-            MoveTo(currentCommand.position, -25);
-            updateStateMachine("Drilling");
-            // Start the drill motion here
-            MoveTo(currentCommand.position, 100);
-            // Stop the drill motion here
-            updateStateMachine("Positioning");
-            HAL_Delay(500);
-            MoveTo(currentCommand.position, -25);
-            MoveTo(50, -190);
-            // Would add the bit-clearing stuff here
-            updateStateMachine("Waiting");
-          }
-          else // Manual sequence
-          {
-            printf("Manual sequence activated\n");
-            // Manual mode to be added
-          }
-        }
-        else
-        {
-          // Handle case where a command is received while another is pending
-          printf("Command received while another is in progress. Ignoring or queueing.\r\n");
-        }
-      }
-    }
-
-    // Wait until motor movement is complete before starting the next command
-    if (commandPending)
-    {
-      if (motorsMoving())
-      {
-        HAL_Delay(1);
-      }
-      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
-    }
-
-    HAL_Delay(1);
+    int32_t encoder_position = (int32_t)__HAL_TIM_GET_COUNTER(&htim2);
+    printf("Encoder Position: %d\r\n", encoder_position);
   }
 }
 
@@ -295,35 +281,4 @@ void SerialDemo(void)
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
   }
-}
-
-/**
- * @brief Put all system health checks here
- *
- */
-void SystemHealthCheck(void)
-{
-  // Check that all limit switches are closed (NC switched).
-  if (ySW_pos.Pin_state)
-  {
-    printf("Error: check Y+ sw\n");
-  }
-  else if (ySW_neg.Pin_state)
-  {
-    printf("Error: check Y- sw\n");
-  }
-  else if (zSW_pos.Pin_state)
-  {
-    printf("Error: check Z+ sw\n");
-  }
-  else if (zSW_neg.Pin_state)
-  {
-    printf("Error: check Z- sw\n");
-  }
-  else
-  {
-    updateStateMachine("Unhomed");
-    return;
-  }
-  ErrorHandler();
 }
