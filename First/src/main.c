@@ -20,49 +20,58 @@ void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 
 // Encoder
-TIM_HandleTypeDef htim2;
-void MX_TIM2_Init(void)
-{
-  __HAL_RCC_TIM2_CLK_ENABLE(); // Enable timer clock
+TIM_HandleTypeDef htim1;
 
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0; // No prescaler for full resolution
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0xFFFF; // Max value for 16-bit counter
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+void MX_TIM1_Init(void)
+{
+  __HAL_RCC_TIM1_CLK_ENABLE(); // Enable TIM1 clock
+
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0; // No prescaler for full resolution
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 0xFFFF; // Max value for 16-bit counter
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
   TIM_Encoder_InitTypeDef sConfig = {0};
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature encoding
 
-  // Assign new channels
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING; // Use PA1 (TIM2_CH2) as CH1
+  // Channel 1 Configuration (PA8 -> TIM1_CH1)
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0x0f; // Add a filter to suppress noise
+  sConfig.IC1Filter = 0x0F; // Add a filter to suppress noise
 
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING; // Use PA2 (TIM2_CH3) as CH2
+  // Channel 2 Configuration (PA9 -> TIM1_CH2)
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0x0f; // Add a filter to suppress noise
+  sConfig.IC2Filter = 0x0F; // Add a filter to suppress noise
 
-  HAL_TIM_Encoder_Init(&htim2, &sConfig);
-  HAL_TIM_Base_Start(&htim2);
+  // Initialize TIM1 in encoder mode
+  HAL_TIM_Encoder_Init(&htim1, &sConfig);
+
+  // Start the TIM1 base
+  HAL_TIM_Base_Start(&htim1);
 }
 
 void Encoder_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  // Configure pins for new encoder signals (PA1, PA2 -> TIM2_CH2, TIM2_CH3)
-  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1; // PA1 -> TIM2_CH2, PA2 -> TIM2_CH3
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP; // Use pull-up for stability
+  // Enable GPIOA clock
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  // Configure PA8 (TIM1_CH1) and PA9 (TIM1_CH2) for encoder input
+  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP; // Alternate function, push-pull
+  GPIO_InitStruct.Pull = GPIO_PULLUP;     // Use pull-up for stability
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2; // Alternate function for TIM2
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM1; // Alternate function for TIM1
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  MX_TIM2_Init();
+  // Initialize TIM1
+  MX_TIM1_Init();
 }
 
 int main(void)
@@ -86,8 +95,8 @@ int main(void)
 
   while (1)
   {
-    int32_t encoder_position = (int16_t)__HAL_TIM_GET_COUNTER(&htim2);
-    printf("Encoder Position: %d\r\n", encoder_position);
+    int32_t encoder_position = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
+    printf("Encoder Position: %ld\r\n", encoder_position);
     HAL_Delay(100);
   }
 }
