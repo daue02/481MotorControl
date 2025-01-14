@@ -4,7 +4,6 @@
 #include "hmi_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
-#include "encoder_hal.h"
 #include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
@@ -43,11 +42,6 @@ int main(void)
 
   while (1)
   {
-    int32_t ticks1, ticks2;
-    getTicks(&ticks1, &ticks2);
-
-    sendTicks(ticks1, ticks2);
-
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -99,7 +93,7 @@ int main(void)
       motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
 
-    HAL_Delay(1);
+    HAL_Delay(10);
   }
 }
 
