@@ -46,7 +46,7 @@ void setDrillPower(int power)
 
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
         HAL_Delay(1 / (motorDrill.accel / 1000));
-        printf("Power level: %d\n", motorDrill.currentPower);
+        LOG_INFO("Power level: %d", motorDrill.currentPower); // Use the logging macro
     }
 }
 
