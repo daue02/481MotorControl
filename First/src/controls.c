@@ -5,7 +5,7 @@
 
 double calculateRPM(double delta);
 void PrintState(bool posOnly);
-struct stateMachine state = {0};
+
 /**
  * @brief Move the robot to the x and y coordinates.
  *
@@ -19,7 +19,7 @@ void MoveTo(double y, double z)
 
     if (y > motorY.posMax || y < motorY.posMin || z > motorZ.posMax || z < motorZ.posMin)
     {
-        printf("Move is outside of range!\r\n");
+        printf("Move is outside of range!\n");
         ErrorHandler();
     }
     else
@@ -112,6 +112,7 @@ void PrintState(bool posOnly)
     }
     printf("Current YZ Pos [mm]: ");
     PrintCartesianCoords(state.y, state.z);
+    printf("\n");
 }
 
 /**
@@ -127,7 +128,7 @@ void PrintCartesianCoords(double y, double z)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    printf("(%d.%d, %d.%d)\r\n", int_part, decimal_part, int_part2, decimal_part2);
+    printf("(%d.%d, %d.%d)\n", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**

@@ -1,114 +1,25 @@
 #include "main.h"
-// #include "controls.h"
-// #include "drill_hal.h"
-// #include "hmi_hal.h"
-// #include "motor_hal.h"
+#include "controls.h"
+#include "drill_hal.h"
+#include "hmi_hal.h"
+#include "motor_hal.h"
 #include "uart.h"
-// #include "limit_switch_hal.h"
+#include "encoder_hal.h"
+#include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
 UART_HandleTypeDef UartHandle;
 
+struct stateMachine state = {0};
 CommandData currentCommand;
 
 static void SystemClockConfig(void);
-void UART_Test(CommandData *cmdData);
 void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
-
-// Encoder
-TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim8;
-
-void MX_TIM1_Init(void) // Encoder 1
-{
-  __HAL_RCC_TIM1_CLK_ENABLE();
-
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0; // No prescaler for full resolution
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 0xFFFF; // Max value for 16-bit counter
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-
-  TIM_Encoder_InitTypeDef sConfig = {0};
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature encoding
-
-  // Channel 1 Configuration
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0x0F; // Add a filter to suppress noise
-
-  // Channel 2 Configuration
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0x0F; // Add a filter to suppress noise
-
-  // Initialize TIM1 in encoder mode
-  HAL_TIM_Encoder_Init(&htim1, &sConfig);
-  HAL_TIM_Base_Start(&htim1);
-}
-
-void MX_TIM8_Init(void) // Encoder 2
-{
-  __HAL_RCC_TIM8_CLK_ENABLE();
-
-  htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0; // No prescaler for full resolution
-  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 0xFFFF; // Max value for 16-bit counter
-  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-
-  TIM_Encoder_InitTypeDef sConfig = {0};
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12; // Both channels for quadrature encoding
-
-  // Channel 1 Configuration
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0x0F; // Add a filter to suppress noise
-
-  // Channel 2 Configuration
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0x0F; // Add a filter to suppress noise
-
-  // Initialize TIM8 in encoder mode
-  HAL_TIM_Encoder_Init(&htim8, &sConfig);
-  HAL_TIM_Base_Start(&htim8);
-}
-
-void Encoder_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  // Configure PA8 (TIM1_CH1) and PA9 (TIM1_CH2) for first encoder
-  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  // Configure PC6 (TIM8_CH1) and PC7 (TIM8_CH2) for second encoder
-  GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  // Initialize TIM1 and TIM8
-  MX_TIM1_Init();
-  MX_TIM8_Init();
-}
+void SystemHealthCheck(void);
 
 int main(void)
 {
@@ -119,6 +30,10 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
+  Drill_Init();
+  Limit_Switch_Init();
+  HMI_Init();
+  Motors_Init();
   UART_Init();
   Encoder_Init();
 
@@ -126,17 +41,67 @@ int main(void)
 
   CommandData cmdData;
 
-  // Blocking connection test
-  // UART_Test(&cmdData);
-
   while (1)
   {
-    // Read Encoder 1 position (TIM1)
-    int16_t encoder1_position = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
-    int16_t encoder2_position = (int16_t)__HAL_TIM_GET_COUNTER(&htim8);
-    printf("Encoder 1, 2: %ld, %ld\r\n", encoder1_position, encoder2_position);
+    int32_t ticks1, ticks2;
+    getTicks(&ticks1, &ticks2);
+    printf("Encoders: %ld, %ld\r\n", ticks1, ticks2);
 
-    HAL_Delay(100); // Delay for readability
+    sendTicks(ticks1, ticks2);
+
+    if (rxReady)
+    {
+      int status = receiveMessage(&cmdData);
+      if (status == 0)
+      {
+        if (!commandPending)
+        {
+          currentCommand = cmdData;
+          commandPending = true;
+          if (1) // Automatic sequence
+          {
+            // Hard-coded sequence. Will need to check actual heights/speeds when testing
+            printf("Automatic sequence activated\n");
+            SystemHealthCheck();
+            HomeMotors();
+            updateStateMachine("Positioning");
+            MoveTo(currentCommand.position, -25);
+            updateStateMachine("Drilling");
+            // Start the drill motion here
+            MoveTo(currentCommand.position, 100);
+            // Stop the drill motion here
+            updateStateMachine("Positioning");
+            HAL_Delay(500);
+            MoveTo(currentCommand.position, -25);
+            MoveTo(50, -190);
+            // Would add the bit-clearing stuff here
+            updateStateMachine("Waiting");
+          }
+          else // Manual sequence
+          {
+            printf("Manual sequence activated\n");
+            // Manual mode to be added
+          }
+        }
+        else
+        {
+          // Handle case where a command is received while another is pending
+          printf("Command received while another is in progress. Ignoring or queueing.\r\n");
+        }
+      }
+    }
+
+    // Wait until motor movement is complete before starting the next command
+    if (commandPending)
+    {
+      if (motorsMoving())
+      {
+        HAL_Delay(1);
+      }
+      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
+    }
+
+    HAL_Delay(1);
   }
 }
 
@@ -220,24 +185,6 @@ void ErrorHandler(void)
   }
 }
 
-void UART_Test(CommandData *cmdData)
-{
-  // uart test
-  while (1)
-  {
-    if (rxReady)
-    {
-      int status = receiveMessage(cmdData);
-      if (status == 0)
-      {
-        printf("Received Command: Axis %d, Position %d\r\n", cmdData->axis, cmdData->position);
-        motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
-      }
-    }
-    HAL_Delay(1);
-  }
-}
-
 /**
  * @brief Initializes UART for printing to the serial monitor.
  *
@@ -246,7 +193,7 @@ void Serial_Init(void)
 {
   // Initialize primary UART (e.g., USARTx)
   UartHandle.Instance = USARTx; // Replace USARTx with your primary UART instance
-  UartHandle.Init.BaudRate = 9600;
+  UartHandle.Init.BaudRate = 115200;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   UartHandle.Init.StopBits = UART_STOPBITS_1;
   UartHandle.Init.Parity = UART_PARITY_NONE;
@@ -317,21 +264,52 @@ void RecieveCoordinates(double *y, double *z)
   printf("\n");
 }
 
-// /**
-//  * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
-//  *
-//  */
-// void SerialDemo(void)
-// {
-//   printf("---------- Entered Serial Demo ----------\n");
-//   while (1)
-//   {
-//     double y = 0, z = 0;
-//     RecieveCoordinates(&y, &z);
-//     MoveTo(y, z);
-//     while (motorsMoving())
-//     {
-//       HAL_Delay(1); // Prevent user from sending another request while still moving
-//     }
-//   }
-// }
+/**
+ * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
+ *
+ */
+void SerialDemo(void)
+{
+  printf("---------- Entered Serial Demo ----------\n");
+  while (1)
+  {
+    double y = 0, z = 0;
+    RecieveCoordinates(&y, &z);
+    MoveTo(y, z);
+    while (motorsMoving())
+    {
+      HAL_Delay(1); // Prevent user from sending another request while still moving
+    }
+  }
+}
+
+/**
+ * @brief Put all system health checks here
+ *
+ */
+void SystemHealthCheck(void)
+{
+  // Check that all limit switches are closed (NC switched).
+  if (ySW_pos.Pin_state)
+  {
+    printf("Error: check Y+ sw\n");
+  }
+  else if (ySW_neg.Pin_state)
+  {
+    printf("Error: check Y- sw\n");
+  }
+  else if (zSW_pos.Pin_state)
+  {
+    printf("Error: check Z+ sw\n");
+  }
+  else if (zSW_neg.Pin_state)
+  {
+    printf("Error: check Z- sw\n");
+  }
+  else
+  {
+    updateStateMachine("Unhomed");
+    return;
+  }
+  ErrorHandler();
+}

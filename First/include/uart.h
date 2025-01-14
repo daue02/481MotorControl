@@ -15,6 +15,7 @@ extern volatile bool commandPending;
 void UART_Init();
 int receiveMessage(CommandData *cmdData);
 void motorOperationCompleteCallback(uint8_t axis, uint16_t position);
+void sendTicks(int32_t ticks1, int32_t ticks2);
 
 /*
     Notes about using this module:
