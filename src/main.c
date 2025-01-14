@@ -93,7 +93,7 @@ int main(void)
       motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
 
-    HAL_Delay(10);
+    HAL_Delay(1);
   }
 }
 
