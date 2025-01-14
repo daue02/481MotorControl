@@ -65,6 +65,13 @@ void MX_TIM8_Init(void) // Encoder 2
     HAL_TIM_Base_Start(&htim8);
 }
 
+/**
+ * @brief  Initializes the GPIO pins and timers for the encoders.
+ *
+ * This function configures the GPIO pins PA8, PA9 for TIM1 and PC6, PC7 for TIM8
+ * to be used as encoder inputs. It sets the pins to alternate function push-pull mode,
+ * with pull-up resistors and high speed. It also initializes the TIM1 and TIM8 timers.
+ */
 void Encoder_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -90,6 +97,15 @@ void Encoder_Init(void)
     MX_TIM8_Init();
 }
 
+/**
+ * @brief  Retrieves the current tick counts from the encoders.
+ *
+ * @param  ticks1: Pointer to an integer where the tick count of the first encoder (TIM1) will be stored.
+ * @param  ticks2: Pointer to an integer where the tick count of the second encoder (TIM8) will be stored.
+ *
+ * This function reads the current counter values of TIM1 and TIM8 and stores them in the provided
+ * integer pointers. These values represent the tick counts of the respective encoders.
+ */
 void getTicks(int32_t *ticks1, int32_t *ticks2)
 {
     *ticks1 = (int32_t)__HAL_TIM_GET_COUNTER(&htim1);

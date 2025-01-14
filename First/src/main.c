@@ -45,7 +45,6 @@ int main(void)
   {
     int32_t ticks1, ticks2;
     getTicks(&ticks1, &ticks2);
-    printf("Encoders: %ld, %ld\r\n", ticks1, ticks2);
 
     sendTicks(ticks1, ticks2);
 

@@ -148,32 +148,42 @@ void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
     printf("Sent Message: Type %d, Axis %d, Position %d\r\n", messageType, axis, position);
 }
 
+/**
+ * @brief Sends the encoder tick values over the UART interface.
+ *
+ * This function prepares a buffer containing the encoder tick values for two axes,
+ * calculates a checksum for data integrity, and transmits the buffer using the UART interface.
+ *
+ * @param ticks1 The tick value for the first encoder.
+ * @param ticks2 The tick value for the second encoder.
+ */
 void sendTicks(int32_t ticks1, int32_t ticks2)
 {
     // Prepare the buffer
-    ticksBuffer[0] = 0xAE; // Message type or start byte (example)
+    ticksBuffer[0] = 0xAE; // Start byte
 
-    // Serialize ticks1 into ticksBuffer[1] to ticksBuffer[4]
-    ticksBuffer[1] = (ticks1 >> 24) & 0xFF; // Most significant byte (MSB)
+    // Serialize ticks1
+    ticksBuffer[1] = (ticks1 >> 24) & 0xFF;
     ticksBuffer[2] = (ticks1 >> 16) & 0xFF;
     ticksBuffer[3] = (ticks1 >> 8) & 0xFF;
-    ticksBuffer[4] = ticks1 & 0xFF; // Least significant byte (LSB)
+    ticksBuffer[4] = ticks1 & 0xFF;
 
-    // Serialize ticks2 into ticksBuffer[5] to ticksBuffer[8]
-    ticksBuffer[5] = (ticks2 >> 24) & 0xFF; // MSB
+    // Serialize ticks2
+    ticksBuffer[5] = (ticks2 >> 24) & 0xFF;
     ticksBuffer[6] = (ticks2 >> 16) & 0xFF;
     ticksBuffer[7] = (ticks2 >> 8) & 0xFF;
     ticksBuffer[8] = ticks2 & 0xFF; // LSB
 
-    // Optionally, calculate a checksum for the message
+    // Checksum
     uint8_t checksum = 0;
     for (int i = 0; i < 9; i++)
     {
         checksum += ticksBuffer[i];
     }
-    ticksBuffer[9] = checksum; // Add checksum to the buffer
+    ticksBuffer[9] = checksum;
 
     HAL_UART_Transmit_IT(&huart5, ticksBuffer, 10);
+    printf("Sent encoder ticks: %ld, %ld\r\n", ticks1, ticks2);
 }
 
 /**
