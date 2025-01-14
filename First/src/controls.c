@@ -19,7 +19,7 @@ void MoveTo(double y, double z)
 
     if (y > motorY.posMax || y < motorY.posMin || z > motorZ.posMax || z < motorZ.posMin)
     {
-        printf("Move is outside of range!\n");
+        LOG_ERROR("Move is outside of range!");
         ErrorHandler();
     }
     else
@@ -99,20 +99,20 @@ double calculateRPM(double delta)
  */
 void PrintState(bool posOnly)
 {
-    printf("\n");
+    LOG_INFO("");
     if (!posOnly)
     {
-        printf("Robot State:\n");
-        printf("Faulted: %s\n", state.faulted ? "Yes" : "No");
-        printf("Unhomed: %s\n", state.homing ? "Yes" : "No");
-        printf("Homing: %s\n", state.homing ? "Yes" : "No");
-        printf("Waiting: %s\n", state.waiting ? "Yes" : "No");
-        printf("Positioning: %s\n", state.positioning ? "Yes" : "No");
-        printf("Drilling: %s\n", state.drilling ? "Yes" : "No");
+        LOG_INFO("Robot State:");
+        LOG_INFO("Faulted: %s", state.faulted ? "Yes" : "No");
+        LOG_INFO("Unhomed: %s", state.homing ? "Yes" : "No");
+        LOG_INFO("Homing: %s", state.homing ? "Yes" : "No");
+        LOG_INFO("Waiting: %s", state.waiting ? "Yes" : "No");
+        LOG_INFO("Positioning: %s", state.positioning ? "Yes" : "No");
+        LOG_INFO("Drilling: %s", state.drilling ? "Yes" : "No");
     }
-    printf("Current YZ Pos [mm]: ");
+    LOG_INFO("Current YZ Pos [mm]: ");
     PrintCartesianCoords(state.y, state.z);
-    printf("\n");
+    LOG_INFO("");
 }
 
 /**
@@ -128,11 +128,10 @@ void PrintCartesianCoords(double y, double z)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    printf("(%d.%d, %d.%d)\n", int_part, decimal_part, int_part2, decimal_part2);
+    LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**
- * @brief Update the state machine following an event
  *
  * @param toState to: Faulted, Unhomed, Homing, Waiting, Positioning, Drilling
  */

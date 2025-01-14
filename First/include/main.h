@@ -7,6 +7,7 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_nucleo.h"
 #include "stdio.h"
+#include "log.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>

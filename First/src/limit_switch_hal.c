@@ -103,12 +103,12 @@ void EXTI9_5_IRQHandler(void)
         if (yPin_p_state)
         {
             motorY.isMoving = 0;
-            printf("Y+ Engaged\r\n");
+            LOG_INFO("Y+ Engaged");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
-            printf("Y+ Disengaged\r\n");
+            LOG_INFO("Y+ Disengaged");
         }
         HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin);
         ySW_pos.Pin_state = yPin_p_state;
@@ -119,12 +119,12 @@ void EXTI9_5_IRQHandler(void)
         if (yPin_n_state)
         {
             motorY.isMoving = 0;
-            printf("Y- Engaged\r\n");
+            LOG_INFO("Y- Engaged");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
-            printf("Y- Disengaged\r\n");
+            LOG_INFO("Y- Disengaged");
         }
         HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);
         ySW_neg.Pin_state = yPin_n_state;
@@ -136,12 +136,12 @@ void EXTI9_5_IRQHandler(void)
         if (zPin_p_state)
         {
             motorZ.isMoving = 0;
-            printf("Z+ Engaged\r\n");
+            LOG_INFO("Z+ Engaged");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
-            printf("Z+ Disengaged\r\n");
+            LOG_INFO("Z+ Disengaged");
         }
         HAL_GPIO_EXTI_IRQHandler(zSW_pos.pin);
         zSW_pos.Pin_state = zPin_p_state;
@@ -152,12 +152,12 @@ void EXTI9_5_IRQHandler(void)
         if (zPin_n_state)
         {
             motorZ.isMoving = 0;
-            printf("Z- Engaged\r\n");
+            LOG_INFO("Z- Engaged");
         }
         // Switch is closed and limit switch is not engaged
         else
         {
-            printf("Z- Disengaged\r\n");
+            LOG_INFO("Z- Disengaged");
         }
         HAL_GPIO_EXTI_IRQHandler(zSW_neg.pin);
         zSW_neg.Pin_state = zPin_n_state;
@@ -165,16 +165,16 @@ void EXTI9_5_IRQHandler(void)
 
     if (piSW.Pin_state != piSW_state)
     {
-        // Pi starts sending interrurpt
+        // Pi starts sending interrupt
         if (piSW_state)
         {
             ErrorHandler();
-            printf("Interrupt received from Pi\r\n");
+            LOG_ERROR("Interrupt received from Pi");
         }
         // Pi stops sending interrupt
         else
         {
-            printf("Interrupt from Pi cancelled\r\n");
+            LOG_INFO("Interrupt from Pi cancelled");
         }
         HAL_GPIO_EXTI_IRQHandler(piSW.pin);
         piSW.Pin_state = piSW_state;

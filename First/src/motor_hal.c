@@ -126,12 +126,12 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     // if (motor->name == motorY.name)
     // {
-    //     printf("Steps to Complete: %d\n", motor->stepsToComplete);
-    //     printf("stepsPerRev: %d\n", (int)motor->stepsPerRev);
-    //     printf("speedRPM: %d\n", (int)speedRPM);
-    //     printf("Nominal Time: %d\n", (int)nominalTime);
-    //     printf("Accel Step: %d\n", (int)motor->accelStep);
-    //     printf("Decel Step: %d\n", (int)motor->decelStep);
+    //     LOG_INFO("Steps to Complete: %d", motor->stepsToComplete);
+    //     LOG_INFO("stepsPerRev: %d", (int)motor->stepsPerRev);
+    //     LOG_INFO("speedRPM: %d", (int)speedRPM);
+    //     LOG_INFO("Nominal Time: %d", (int)nominalTime);
+    //     LOG_INFO("Accel Step: %d", (int)motor->accelStep);
+    //     LOG_INFO("Decel Step: %d", (int)motor->decelStep);
     // }
 
     motor->targetRPM = speedRPM;
@@ -306,7 +306,7 @@ bool motorsMoving(void)
  */
 void HomeMotors(void)
 {
-    printf("Homing...\n");
+    LOG_INFO("Homing...");
     updateStateMachine("Homing");
 
     // Set positions to max so motor is allowed to move in min direction

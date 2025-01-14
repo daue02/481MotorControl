@@ -82,7 +82,7 @@ int receiveMessage(CommandData *cmdData)
     {
         if (messageType == 0x01) // Command message from Raspberry Pi
         {
-            printf("Received Command: Axis %d, Position %d\r\n", axis, position);
+            LOG_INFO("Received Command: Axis %d, Position %d", axis, position);
 
             // Send acknowledgment back
             constructMessage(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
@@ -97,12 +97,12 @@ int receiveMessage(CommandData *cmdData)
         else if (messageType == 0x03 || messageType == 0x04)
         {
             // Received ACK or Error; ignore or handle as needed
-            printf("Received Message Type %d, ignoring.\r\n", messageType);
+            LOG_INFO("Received Message Type %d, ignoring.", messageType);
         }
         else if (messageType == 0x02) // Data message (unlikely in this context)
         {
             // Process data message as needed
-            printf("Received Data: Axis %d, Position %d\r\n", axis, position);
+            LOG_INFO("Received Data: Axis %d, Position %d", axis, position);
 
             // Send acknowledgment back
             constructMessage(0x03, axis, position, txBuffer); // ACK
@@ -110,7 +110,7 @@ int receiveMessage(CommandData *cmdData)
         }
         else
         {
-            printf("Unknown message type received: %d\r\n", messageType);
+            LOG_WARN("Unknown message type received: %d", messageType);
             // Send an error message back
             constructMessage(0x04, 0, 0, txBuffer); // Error message
             HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
@@ -118,7 +118,7 @@ int receiveMessage(CommandData *cmdData)
     }
     else
     {
-        printf("Checksum error\r\n");
+        LOG_ERROR("Checksum error");
         // Send error message back
         constructMessage(0x04, 0, 0, txBuffer); // Error message
         HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
@@ -145,7 +145,7 @@ void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
 {
     constructMessage(messageType, axis, position, txBuffer);
     HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-    printf("Sent Message: Type %d, Axis %d, Position %d\r\n", messageType, axis, position);
+    LOG_INFO("Sent Message: Type %d, Axis %d, Position %d", messageType, axis, position);
 }
 
 /**
@@ -183,7 +183,7 @@ void sendTicks(int32_t ticks1, int32_t ticks2)
     ticksBuffer[9] = checksum;
 
     HAL_UART_Transmit_IT(&huart5, ticksBuffer, 10);
-    printf("Sent encoder ticks: %ld, %ld\r\n", ticks1, ticks2);
+    LOG_DEBUG("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
 }
 
 /**
@@ -253,7 +253,7 @@ void motorOperationCompleteCallback(uint8_t axis, uint16_t position)
 
     commandPending = false;
 
-    printf("Motor operation complete: Axis %d, Position %d\r\n", axis, position);
+    LOG_INFO("Motor operation complete: Axis %d, Position %d", axis, position);
 }
 
 /**

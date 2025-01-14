@@ -3,7 +3,6 @@
 #include "controls.h"
 
 TIM_HandleTypeDef htim5;
-
 void HMI_Init(void);
 static void TIM5_Init(void);
 void TIM5_IRQHandler(void);
@@ -212,11 +211,11 @@ void readDigitalPinState(buttonLED butLED)
 
     if (button_state == GPIO_PIN_SET)
     {
-        printf("%s INACTIVE\n", button_name);
+        LOG_INFO("%s INACTIVE", button_name);
     }
     else if (button_state == GPIO_PIN_RESET)
     {
-        printf("%s ACTIVE\n", button_name);
+        LOG_INFO("%s ACTIVE", button_name);
     }
 }
 
@@ -226,30 +225,30 @@ void readDigitalPinState(buttonLED butLED)
  */
 void hmiTesting(void)
 {
-    // printf("HMI Testing Beginning in 3s\n");
+    // LOG_INFO("HMI Testing Beginning in 3s");
     // HAL_Delay(3000);
 
-    // printf("Green Solid\n");
+    // LOG_INFO("Green Solid");
     // changeLEDState(greenLED, "Solid");
     // HAL_Delay(3000);
 
-    // printf("Green Slow\n");
+    // LOG_INFO("Green Slow");
     // changeLEDState(greenLED, "Slow");
     // HAL_Delay(3000);
 
-    // printf("Green Fast\n");
+    // LOG_INFO("Green Fast");
     // changeLEDState(greenLED, "Fast");
     // HAL_Delay(3000);
 
-    // printf("Red Solid\n");
+    // LOG_INFO("Red Solid");
     // changeLEDState(redLED, "Solid");
     // HAL_Delay(3000);
 
-    // printf("Red Slow\n");
+    // LOG_INFO("Red Slow");
     // changeLEDState(redLED, "Slow");
     // HAL_Delay(3000);
 
-    // printf("Red Fast\n");
+    // LOG_INFO("Red Fast");
     // changeLEDState(redLED, "Fast");
     // HAL_Delay(3000);
 
@@ -258,23 +257,23 @@ void hmiTesting(void)
     {
         if (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin) == GPIO_PIN_SET)
         {
-            printf("Home button ON\n");
+            LOG_INFO("Home button ON");
         }
         else
         {
-            printf("Home button OFF\n");
+            LOG_INFO("Home button OFF");
         }
 
         if (HAL_GPIO_ReadPin(auxButton.port, auxButton.pin) == GPIO_PIN_SET)
         {
-            printf("Aux button ON\n");
+            LOG_INFO("Aux button ON");
         }
         else
         {
-            printf("Aux button OFF\n");
+            LOG_INFO("Aux button OFF");
         }
-        printf("\n");
+        LOG_INFO("");
         HAL_Delay(1000);
     }
-    printf("Test complete, please try the RESET button\n");
+    LOG_INFO("Test complete, please try the RESET button");
 }

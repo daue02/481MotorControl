@@ -37,7 +37,7 @@ int main(void)
   UART_Init();
   Encoder_Init();
 
-  printf("System Initialized\r\n");
+  LOG_INFO("System Initialized");
 
   CommandData cmdData;
 
@@ -59,8 +59,7 @@ int main(void)
           commandPending = true;
           if (1) // Automatic sequence
           {
-            // Hard-coded sequence. Will need to check actual heights/speeds when testing
-            printf("Automatic sequence activated\n");
+            LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
             HomeMotors();
             updateStateMachine("Positioning");
@@ -78,14 +77,14 @@ int main(void)
           }
           else // Manual sequence
           {
-            printf("Manual sequence activated\n");
+            LOG_INFO("Manual sequence activated");
             // Manual mode to be added
           }
         }
         else
         {
           // Handle case where a command is received while another is pending
-          printf("Command received while another is in progress. Ignoring or queueing.\r\n");
+          LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
         }
       }
     }
@@ -255,12 +254,12 @@ double ReceiveFloat(void)
  */
 void RecieveCoordinates(double *y, double *z)
 {
-  printf("Enter desired Y coordinate [mm]: \n");
+  LOG_INFO("Enter desired Y coordinate [mm]: ");
   *y = ReceiveFloat();
-  printf("\n");
-  printf("Enter desired Z coordinate [mm]: \n");
+  LOG_INFO("");
+  LOG_INFO("Enter desired Z coordinate [mm]: ");
   *z = ReceiveFloat();
-  printf("\n");
+  LOG_INFO("");
 }
 
 /**
@@ -269,7 +268,7 @@ void RecieveCoordinates(double *y, double *z)
  */
 void SerialDemo(void)
 {
-  printf("---------- Entered Serial Demo ----------\n");
+  LOG_INFO("---------- Entered Serial Demo ----------");
   while (1)
   {
     double y = 0, z = 0;
@@ -291,19 +290,19 @@ void SystemHealthCheck(void)
   // Check that all limit switches are closed (NC switched).
   if (ySW_pos.Pin_state)
   {
-    printf("Error: check Y+ sw\n");
+    LOG_ERROR("Error: check Y+ sw");
   }
   else if (ySW_neg.Pin_state)
   {
-    printf("Error: check Y- sw\n");
+    LOG_ERROR("Error: check Y- sw");
   }
   else if (zSW_pos.Pin_state)
   {
-    printf("Error: check Z+ sw\n");
+    LOG_ERROR("Error: check Z+ sw");
   }
   else if (zSW_neg.Pin_state)
   {
-    printf("Error: check Z- sw\n");
+    LOG_ERROR("Error: check Z- sw");
   }
   else
   {
