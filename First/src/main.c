@@ -4,6 +4,7 @@
 #include "hmi_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
+#include "encoder_hal.h"
 #include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
@@ -34,6 +35,7 @@ int main(void)
   HMI_Init();
   Motors_Init();
   UART_Init();
+  Encoder_Init();
 
   printf("System Initialized\r\n");
 
@@ -41,6 +43,11 @@ int main(void)
 
   while (1)
   {
+    int32_t ticks1, ticks2;
+    getTicks(&ticks1, &ticks2);
+
+    sendTicks(ticks1, ticks2);
+
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -185,7 +192,7 @@ void Serial_Init(void)
 {
   // Initialize primary UART (e.g., USARTx)
   UartHandle.Instance = USARTx; // Replace USARTx with your primary UART instance
-  UartHandle.Init.BaudRate = 9600;
+  UartHandle.Init.BaudRate = 115200;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   UartHandle.Init.StopBits = UART_STOPBITS_1;
   UartHandle.Init.Parity = UART_PARITY_NONE;

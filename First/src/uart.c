@@ -2,6 +2,7 @@
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
+#define TICK_BUF_SIZE 10
 
 UART_HandleTypeDef huart5;
 
@@ -16,6 +17,7 @@ volatile bool rxReady = false;
 volatile bool commandPending = false;
 uint8_t rxBuffer[RX_BUFFER_SIZE];
 uint8_t txBuffer[TX_BUFFER_SIZE];
+uint8_t ticksBuffer[TICK_BUF_SIZE];
 
 /**
  * @brief UART5 interrupt handler.
@@ -35,8 +37,8 @@ void UART5_IRQHandler(void)
 void UART_Init()
 {
     // Initialize secondary UART (UART5 for Pi connection)
-    huart5.Instance = UART5;     // Use UART5
-    huart5.Init.BaudRate = 9600; // Set to match Pi's UART baud rate
+    huart5.Instance = UART5;       // Use UART5
+    huart5.Init.BaudRate = 115200; // Set to match Pi's UART baud rate
     huart5.Init.WordLength = UART_WORDLENGTH_8B;
     huart5.Init.StopBits = UART_STOPBITS_1;
     huart5.Init.Parity = UART_PARITY_NONE;
@@ -144,6 +146,44 @@ void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
     constructMessage(messageType, axis, position, txBuffer);
     HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
     printf("Sent Message: Type %d, Axis %d, Position %d\r\n", messageType, axis, position);
+}
+
+/**
+ * @brief Sends the encoder tick values over the UART interface.
+ *
+ * This function prepares a buffer containing the encoder tick values for two axes,
+ * calculates a checksum for data integrity, and transmits the buffer using the UART interface.
+ *
+ * @param ticks1 The tick value for the first encoder.
+ * @param ticks2 The tick value for the second encoder.
+ */
+void sendTicks(int32_t ticks1, int32_t ticks2)
+{
+    // Prepare the buffer
+    ticksBuffer[0] = 0xAE; // Start byte
+
+    // Serialize ticks1
+    ticksBuffer[1] = (ticks1 >> 24) & 0xFF;
+    ticksBuffer[2] = (ticks1 >> 16) & 0xFF;
+    ticksBuffer[3] = (ticks1 >> 8) & 0xFF;
+    ticksBuffer[4] = ticks1 & 0xFF;
+
+    // Serialize ticks2
+    ticksBuffer[5] = (ticks2 >> 24) & 0xFF;
+    ticksBuffer[6] = (ticks2 >> 16) & 0xFF;
+    ticksBuffer[7] = (ticks2 >> 8) & 0xFF;
+    ticksBuffer[8] = ticks2 & 0xFF; // LSB
+
+    // Checksum
+    uint8_t checksum = 0;
+    for (int i = 0; i < 9; i++)
+    {
+        checksum += ticksBuffer[i];
+    }
+    ticksBuffer[9] = checksum;
+
+    HAL_UART_Transmit_IT(&huart5, ticksBuffer, 10);
+    printf("Sent encoder ticks: %ld, %ld\r\n", ticks1, ticks2);
 }
 
 /**
