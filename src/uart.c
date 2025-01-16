@@ -1,4 +1,5 @@
 #include "uart.h"
+#include "encoder_hal.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -55,7 +56,7 @@ void UART_Init()
         ErrorHandler();
     }
 
-    HAL_UART_Receive_IT(&huart5, rxBuffer, sizeof(rxBuffer));
+    HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
 }
 
 /**
@@ -182,7 +183,7 @@ void sendTicks(int32_t ticks1, int32_t ticks2)
     }
     ticksBuffer[9] = checksum;
 
-    HAL_UART_Transmit_IT(&huart5, ticksBuffer, 10);
+    HAL_UART_Transmit_IT(&huart5, ticksBuffer, TICK_BUF_SIZE);
     LOG_DEBUG("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
 }
 
@@ -284,6 +285,33 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART5)
     {
-        rxReady = true;
+        static uint8_t tempBuffer[RX_BUFFER_SIZE];
+        static uint8_t bytesReceived = 0;
+
+        tempBuffer[bytesReceived++] = rxBuffer[0];
+
+        // Single-byte request for encoder data
+        if (tempBuffer[0] == 0xAE && bytesReceived == 1)
+        {
+            int32_t ticks1, ticks2;
+            getTicks(&ticks1, &ticks2);
+            sendTicks(ticks1, ticks2);
+
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+
+        // Multi-byte command
+        if (bytesReceived == RX_BUFFER_SIZE)
+        {
+            // Copy full message into rxBuffer for processing
+            memcpy(rxBuffer, tempBuffer, RX_BUFFER_SIZE);
+
+            bytesReceived = 0;
+            rxReady = true;
+        }
+
+        HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
     }
 }
