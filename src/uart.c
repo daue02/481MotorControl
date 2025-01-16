@@ -3,7 +3,7 @@
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
-#define TICK_BUF_SIZE 10
+#define TICK_BUF_SIZE 6
 
 UART_HandleTypeDef huart5;
 
@@ -158,33 +158,29 @@ void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
  * @param ticks1 The tick value for the first encoder.
  * @param ticks2 The tick value for the second encoder.
  */
-void sendTicks(int32_t ticks1, int32_t ticks2)
+void sendTicks(int16_t ticks1, int16_t ticks2)
 {
     // Prepare the buffer
     ticksBuffer[0] = 0xAE; // Start byte
 
     // Serialize ticks1
-    ticksBuffer[1] = (ticks1 >> 24) & 0xFF;
-    ticksBuffer[2] = (ticks1 >> 16) & 0xFF;
-    ticksBuffer[3] = (ticks1 >> 8) & 0xFF;
-    ticksBuffer[4] = ticks1 & 0xFF;
+    ticksBuffer[1] = (ticks1 >> 8) & 0xFF;
+    ticksBuffer[2] = ticks1 & 0xFF;
 
     // Serialize ticks2
-    ticksBuffer[5] = (ticks2 >> 24) & 0xFF;
-    ticksBuffer[6] = (ticks2 >> 16) & 0xFF;
-    ticksBuffer[7] = (ticks2 >> 8) & 0xFF;
-    ticksBuffer[8] = ticks2 & 0xFF; // LSB
+    ticksBuffer[3] = (ticks2 >> 8) & 0xFF;
+    ticksBuffer[4] = ticks2 & 0xFF;
 
     // Checksum
     uint8_t checksum = 0;
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 5; i++)
     {
         checksum += ticksBuffer[i];
     }
-    ticksBuffer[9] = checksum;
+    ticksBuffer[5] = checksum;
 
     HAL_UART_Transmit_IT(&huart5, ticksBuffer, TICK_BUF_SIZE);
-    LOG_DEBUG("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
+    LOG_DEBUG("Sent encoder ticks: %d, %d", ticks1, ticks2);
 }
 
 /**
@@ -293,9 +289,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // Single-byte request for encoder data
         if (tempBuffer[0] == 0xAE && bytesReceived == 1)
         {
-            int32_t ticks1, ticks2;
+            int16_t ticks1, ticks2;
             getTicks(&ticks1, &ticks2);
             sendTicks(ticks1, ticks2);
+
+            // LOG_INFO("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

@@ -4,6 +4,7 @@
 #include "hmi_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
+#include "encoder_hal.h"
 #include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
@@ -30,7 +31,7 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   Drill_Init();
-  Limit_Switch_Init();
+  // Limit_Switch_Init();
   HMI_Init();
   Motors_Init();
   UART_Init();

@@ -9,7 +9,7 @@ void MX_TIM1_Init(void) // Encoder 1
 
     htim1.Instance = TIM1;
     htim1.Init.Prescaler = 0; // No prescaler for full resolution
-    htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+    // htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim1.Init.Period = 0xFFFF; // Max value for 16-bit counter
     htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -40,7 +40,7 @@ void MX_TIM8_Init(void) // Encoder 2
 
     htim8.Instance = TIM8;
     htim8.Init.Prescaler = 0; // No prescaler for full resolution
-    htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+    // htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim8.Init.Period = 0xFFFF; // Max value for 16-bit counter
     htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -106,8 +106,8 @@ void Encoder_Init(void)
  * This function reads the current counter values of TIM1 and TIM8 and stores them in the provided
  * integer pointers. These values represent the tick counts of the respective encoders.
  */
-void getTicks(int32_t *ticks1, int32_t *ticks2)
+void getTicks(int16_t *ticks1, int16_t *ticks2)
 {
-    *ticks1 = (int32_t)__HAL_TIM_GET_COUNTER(&htim1);
-    *ticks2 = (int32_t)__HAL_TIM_GET_COUNTER(&htim8);
+    *ticks1 = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
+    *ticks2 = (int16_t)__HAL_TIM_GET_COUNTER(&htim8);
 }

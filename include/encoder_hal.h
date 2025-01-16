@@ -4,6 +4,6 @@
 #include "main.h"
 
 void Encoder_Init(void);
-void getTicks(int32_t *ticks1, int32_t *ticks2);
+void getTicks(int16_t *ticks1, int16_t *ticks2);
 
 #endif
