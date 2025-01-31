@@ -31,7 +31,7 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
   Drill_Init();
-  // Limit_Switch_Init();
+  Limit_Switch_Init();
   HMI_Init();
   Motors_Init();
   UART_Init();
