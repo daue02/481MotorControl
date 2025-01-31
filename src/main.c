@@ -41,8 +41,6 @@ int main(void)
 
   CommandData cmdData;
 
-  HomeMotors();
-
   while (1)
   {
     if (rxReady)
