@@ -40,6 +40,7 @@ int main(void)
 
   ADC_Init();
   int batteryVoltage = (int)readBatteryVoltage();
+  while (1)
   {
     printf("Battery Voltage: %dV\n", batteryVoltage);
     HAL_Delay(1000);

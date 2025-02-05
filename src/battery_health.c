@@ -10,6 +10,14 @@ void ADC_Init(void)
 {
     __HAL_RCC_ADC1_CLK_ENABLE(); // Enable ADC1 clock
 
+    // Pin Config
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    // ADC Config
     hadc1.Instance = ADC1;
     hadc1.Init.Resolution = ADC_RESOLUTION_12B;
     hadc1.Init.ScanConvMode = DISABLE;
@@ -36,8 +44,8 @@ float readBatteryVoltage()
     uint32_t adcValue = HAL_ADC_GetValue(&hadc1);
     HAL_ADC_Stop(&hadc1);
 
-    float scaleFactor = R2 / (R1 + R2);
+    float scaleFactor = (R1 + R2) / R2;
     float vOut = (adcValue / 4095.0) * V_REF;
     float batVoltage = vOut * scaleFactor;
-    return batVoltage;
+    return adcValue;
 }
