@@ -1,11 +1,12 @@
 #include "main.h"
+#include "battery_health.h"
 #include "controls.h"
 #include "drill_hal.h"
+#include "encoder_hal.h"
 #include "hmi_hal.h"
+#include "limit_switch_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
-#include "encoder_hal.h"
-#include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
@@ -37,6 +38,14 @@ int main(void)
   UART_Init();
   Encoder_Init();
 
+  ADC_Init();
+  int batteryVoltage = (int)readBatteryVoltage();
+  {
+    printf("Battery Voltage: %dV\n", batteryVoltage);
+    HAL_Delay(1000);
+  }
+
+  /*
   LOG_INFO("System Initialized");
 
   CommandData cmdData;
@@ -96,6 +105,7 @@ int main(void)
 
     HAL_Delay(1);
   }
+  */
 }
 
 #ifdef __GNUC__
