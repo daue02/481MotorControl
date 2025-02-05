@@ -39,9 +39,10 @@ int main(void)
   Encoder_Init();
 
   ADC_Init();
-  int batteryVoltage = (int)readBatteryVoltage();
+
   while (1)
   {
+    int batteryVoltage = (int)readBatteryVoltage();
     printf("Battery Voltage: %dV\n", batteryVoltage);
     HAL_Delay(1000);
   }
