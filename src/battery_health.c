@@ -1,19 +1,31 @@
 #include "stm32f4xx_hal.h"
+#include "battery_health.h"
 
 ADC_HandleTypeDef hadc1;
 
-const float R1 = 485000.0; // 470K, measured with multimeter
-const float R2 = 38100.0;  // 3x 100K parallel + 5.1k series, measured with multimeter
-const float V_REF = 3.3;
+Battery bat =
+    {
+        .name = "Battery",
+        .adcPort = GPIOC,
+        .adcPin = GPIO_PIN_1,
+        .adcChannel = ADC_CHANNEL_11,
+        .R1 = 485000.0, // 470K, measured with multimeter
+        .R2 = 38100.0,  // 3x 100K parallel + 5.1k series, measured with multimeter
+        .V_REF = 3.3,
+};
 
-void ADC_Init(void)
+/**
+ * @brief Initializes battery pins and ADC
+ *
+ */
+void Battery_Health_Init(void)
 {
     // Pin Config
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Pin = bat.adcPin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(bat.adcPort, &GPIO_InitStruct);
 
     // ADC Config
     __HAL_RCC_ADC1_CLK_ENABLE(); // Enable ADC1 clock
@@ -35,7 +47,7 @@ void ADC_Init(void)
     }
 
     ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = ADC_CHANNEL_11;
+    sConfig.Channel = bat.adcChannel;
     sConfig.Rank = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -44,16 +56,21 @@ void ADC_Init(void)
     }
 }
 
-float readBatteryVoltage()
+/**
+ * @brief Returns current battery voltage.
+ *
+ * @param bat Battery object
+ * @return Battery voltage as a float
+ */
+float readBatteryVoltage(Battery *bat)
 {
-    // ADC_Select_Channel(ADC_CHANNEL_11);
     HAL_Delay(1);
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
     {
         int adcValue = HAL_ADC_GetValue(&hadc1);
-        float scaleFactor = (R1 + R2) / R2;
-        float vOut = (adcValue / 4095.0) * V_REF;
+        float scaleFactor = (bat->R1 + bat->R2) / bat->R2;
+        float vOut = (adcValue / 4095.0) * bat->V_REF;
         float batVoltage = vOut * scaleFactor;
 
         return batVoltage;

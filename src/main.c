@@ -31,23 +31,14 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
+  Battery_Health_Init();
   Drill_Init();
-  Limit_Switch_Init();
+  Encoder_Init();
   HMI_Init();
+  Limit_Switch_Init();
   Motors_Init();
   UART_Init();
-  Encoder_Init();
 
-  ADC_Init();
-
-  while (1)
-  {
-    int batteryVoltage = (int)readBatteryVoltage();
-    printf("Battery Voltage: %dV\n", batteryVoltage);
-    HAL_Delay(1000);
-  }
-
-  /*
   LOG_INFO("System Initialized");
 
   CommandData cmdData;
@@ -107,7 +98,6 @@ int main(void)
 
     HAL_Delay(1);
   }
-  */
 }
 
 #ifdef __GNUC__
