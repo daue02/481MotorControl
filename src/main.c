@@ -1,11 +1,12 @@
 #include "main.h"
+#include "battery_health.h"
 #include "controls.h"
 #include "drill_hal.h"
+#include "encoder_hal.h"
 #include "hmi_hal.h"
+#include "limit_switch_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
-#include "encoder_hal.h"
-#include "limit_switch_hal.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
@@ -30,12 +31,13 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
+  Battery_Health_Init();
   Drill_Init();
-  Limit_Switch_Init();
+  Encoder_Init();
   HMI_Init();
+  Limit_Switch_Init();
   Motors_Init();
   UART_Init();
-  Encoder_Init();
 
   LOG_INFO("System Initialized");
 

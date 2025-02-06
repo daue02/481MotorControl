@@ -34,12 +34,14 @@ InterruptSwitch zSW_neg =
         .pin = GPIO_PIN_5,
 };
 
+/*
 InterruptSwitch piSW =
     {
         .name = "piSwitch",
         .port = GPIOB,
         .pin = GPIO_PIN_7,
 };
+*/
 
 /**
  * @brief Initializes the pins and state of the limit switch / pi interrupt.
@@ -50,9 +52,9 @@ void Switch_Init(InterruptSwitch *interruptSW)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    // External interrupt pin configuration
     GPIO_InitStruct.Pin = interruptSW->pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    /*
     if (interruptSW->name == piSW.name)
     {
         GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Not on a debounce circuit like the other switches
@@ -61,6 +63,8 @@ void Switch_Init(InterruptSwitch *interruptSW)
     {
         GPIO_InitStruct.Pull = GPIO_NOPULL;
     }
+    */
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(interruptSW->port, &GPIO_InitStruct);
 
     interruptSW->Pin_state = HAL_GPIO_ReadPin(interruptSW->port, interruptSW->pin);
@@ -76,7 +80,7 @@ void Limit_Switch_Init(void)
     Switch_Init(&ySW_neg);
     Switch_Init(&zSW_pos);
     Switch_Init(&zSW_neg);
-    Switch_Init(&piSW);
+    // Switch_Init(&piSW);
 
     // Enable and set EXTI line Interrupt to the given priority
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
@@ -95,7 +99,7 @@ void EXTI9_5_IRQHandler(void)
     GPIO_PinState zPin_p_state = HAL_GPIO_ReadPin(zSW_pos.port, zSW_pos.pin);
     GPIO_PinState zPin_n_state = HAL_GPIO_ReadPin(zSW_neg.port, zSW_neg.pin);
 
-    GPIO_PinState piSW_state = HAL_GPIO_ReadPin(piSW.port, piSW.pin);
+    // GPIO_PinState piSW_state = HAL_GPIO_ReadPin(piSW.port, piSW.pin);
 
     if (ySW_pos.Pin_state != yPin_p_state)
     {
@@ -163,6 +167,7 @@ void EXTI9_5_IRQHandler(void)
         zSW_neg.Pin_state = zPin_n_state;
     }
 
+    /*
     if (piSW.Pin_state != piSW_state)
     {
         // Pi starts sending interrupt
@@ -179,4 +184,5 @@ void EXTI9_5_IRQHandler(void)
         HAL_GPIO_EXTI_IRQHandler(piSW.pin);
         piSW.Pin_state = piSW_state;
     }
+    */
 }

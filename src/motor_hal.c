@@ -23,8 +23,8 @@ Motor motorY = {
     .sleepPort = GPIOB,
     .sleepPin = GPIO_PIN_4,
     .dir = CCW,
-    .stepsPerRev = 200, // 200PPR * sixteenth-stepping
-    .lead = 8,           // 8
+    .stepsPerRev = 200, // 200PPR * no microstep
+    .lead = 8,
     .posMin = 0,
     .posMax = 248.27,
     .isMoving = 0,
@@ -39,8 +39,8 @@ Motor motorZ = {
     .sleepPort = GPIOA,
     .sleepPin = GPIO_PIN_6,
     .dir = CCW,
-    .stepsPerRev = 200, // 200PPR * sixteenth-stepping
-    .lead = 5,           // 5
+    .stepsPerRev = 200, // 200PPR
+    .lead = 5,
     .posMin = -200,
     .posMax = 111.3,
     .isMoving = 0,
@@ -55,18 +55,18 @@ void Motor_Init(Motor motor)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    // Initialize Step Pin
+    // Step Pin
     GPIO_InitStruct.Pin = motor.stepPin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(motor.stepPort, &GPIO_InitStruct);
 
-    // Initialize Direction Pin
+    // Direction Pin
     GPIO_InitStruct.Pin = motor.dirPin;
     HAL_GPIO_Init(motor.dirPort, &GPIO_InitStruct);
 
-    // Initialize sleep pin
+    // Sleep pin
     GPIO_InitStruct.Pin = motor.sleepPin;
     HAL_GPIO_Init(motor.sleepPort, &GPIO_InitStruct);
 }

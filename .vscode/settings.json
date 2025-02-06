@@ -11,6 +11,9 @@
         "controls.h": "c",
         "motor_hal.h": "c",
         "stdbool.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "stm32f4xx_hal.h": "c",
+        "drill_hal.h": "c",
+        "uart.h": "c"
     }
 }

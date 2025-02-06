@@ -3,6 +3,7 @@
 #include "controls.h"
 
 TIM_HandleTypeDef htim5;
+
 void HMI_Init(void);
 static void TIM5_Init(void);
 void TIM5_IRQHandler(void);
@@ -64,7 +65,6 @@ void buttonLED_Init(buttonLED *butLED)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    // Pin configuration
     GPIO_InitStruct.Pin = butLED->pin;
     GPIO_InitStruct.Mode = butLED->mode;
     GPIO_InitStruct.Pull = butLED->pull;
@@ -197,83 +197,4 @@ void changeLEDState(buttonLED butLED, const char *ledMode)
             solidLED(redLED);
         }
     }
-}
-
-/**
- * @brief Reads the digital state of a button
- *
- * @param butLED Button to read
- */
-void readDigitalPinState(buttonLED butLED)
-{
-    GPIO_PinState button_state = HAL_GPIO_ReadPin(butLED.port, butLED.pin);
-    const char *button_name = butLED.name;
-
-    if (button_state == GPIO_PIN_SET)
-    {
-        LOG_INFO("%s INACTIVE", button_name);
-    }
-    else if (button_state == GPIO_PIN_RESET)
-    {
-        LOG_INFO("%s ACTIVE", button_name);
-    }
-}
-
-/**
- * @brief Debug to test all lights and buttons of the HMI
- *
- */
-void hmiTesting(void)
-{
-    // LOG_INFO("HMI Testing Beginning in 3s");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Green Solid");
-    // changeLEDState(greenLED, "Solid");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Green Slow");
-    // changeLEDState(greenLED, "Slow");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Green Fast");
-    // changeLEDState(greenLED, "Fast");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Red Solid");
-    // changeLEDState(redLED, "Solid");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Red Slow");
-    // changeLEDState(redLED, "Slow");
-    // HAL_Delay(3000);
-
-    // LOG_INFO("Red Fast");
-    // changeLEDState(redLED, "Fast");
-    // HAL_Delay(3000);
-
-    int i = 0;
-    for (i = 0; i < 100; i++)
-    {
-        if (HAL_GPIO_ReadPin(homeButton.port, homeButton.pin) == GPIO_PIN_SET)
-        {
-            LOG_INFO("Home button ON");
-        }
-        else
-        {
-            LOG_INFO("Home button OFF");
-        }
-
-        if (HAL_GPIO_ReadPin(auxButton.port, auxButton.pin) == GPIO_PIN_SET)
-        {
-            LOG_INFO("Aux button ON");
-        }
-        else
-        {
-            LOG_INFO("Aux button OFF");
-        }
-        LOG_INFO("");
-        HAL_Delay(1000);
-    }
-    LOG_INFO("Test complete, please try the RESET button");
 }

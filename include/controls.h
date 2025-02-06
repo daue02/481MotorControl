@@ -8,11 +8,6 @@
 #include "motor_hal.h"
 #include "main.h"
 
-#define LINK_1 85.0  // mm
-#define LINK_2 190.0 // mm
-#define SAFETY_MARGIN (3.0 / 180.0 * M_PI)
-#define Z_SAFETY_MARGIN 5.0
-
 /**
  * @brief Robot state machine
  *

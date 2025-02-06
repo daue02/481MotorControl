@@ -5,7 +5,6 @@ TIM_HandleTypeDef htim2;
 
 static void MX_TIM2_Init(void);
 
-// Drill object
 Drill motorDrill = {
     .name = "motorDrill",
     .pwmPort = GPIOA,
