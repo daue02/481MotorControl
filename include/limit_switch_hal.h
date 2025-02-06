@@ -19,4 +19,4 @@ extern InterruptSwitch piSW;
 
 void Limit_Switch_Init(void);
 
-#endif /* __LIMIT_SWITCH_H */
+#endif

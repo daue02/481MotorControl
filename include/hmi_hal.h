@@ -22,7 +22,6 @@ extern buttonLED activeLED;
 extern buttonLED homeButton;
 extern buttonLED auxButton;
 
-// Required function prototypes external to hmi HAL files
 void HMI_Init(void);
 void changeLEDState(buttonLED butLED, const char *ledMode);
 void hmiTesting(void);
