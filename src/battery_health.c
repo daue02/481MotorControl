@@ -1,22 +1,44 @@
 #include "stm32f4xx_hal.h"
 #include "battery_health.h"
 
+#define VREFINT_CAL_ADDR ((uint16_t *)0x1FFF7A2A) // Factory-calibrated VREFINT
+
 ADC_HandleTypeDef hadc1;
 
-Battery bat =
-    {
-        .name = "Battery",
-        .adcPort = GPIOC,
-        .adcPin = GPIO_PIN_1,
-        .adcChannel = ADC_CHANNEL_11,
-        .R1 = 485000.0, // 470K, measured with multimeter
-        .R2 = 38100.0,  // 3x 100K parallel + 5.1k series, measured with multimeter
-        .V_REF = 3.3,
+Battery bat = {
+    .name = "Battery",
+    .adcPort = GPIOC,
+    .adcPin = GPIO_PIN_1,
+    .adcChannel = ADC_CHANNEL_11,
+    .R1 = 485000.0, // 470K, measured with multimeter
+    .R2 = 38100.0,  // 3x 100K parallel + 5.1k series, measured with multimeter
+    .V_REF = 3.3,   // Default value, will be updated dynamically
 };
 
 /**
+ * @brief Retrieves the actual reference voltage from VREFINT.
+ * @return Measured V_REF as a float.
+ */
+float getVREF(void)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel = ADC_CHANNEL_VREFINT;
+    sConfig.Rank = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
+    {
+        uint16_t vrefint_adc = HAL_ADC_GetValue(&hadc1);
+        float vref_cal = (*VREFINT_CAL_ADDR) / 4095.0 * 3.3; // Factory calibration value
+        return (vref_cal * 1.21) / (vrefint_adc / 4095.0);   // Scale using nominal 1.21V VREFINT
+    }
+    return 3.3; // Default fallback
+}
+
+/**
  * @brief Initializes battery pins and ADC
- *
  */
 void Battery_Health_Init(void)
 {
@@ -49,7 +71,7 @@ void Battery_Health_Init(void)
     ADC_ChannelConfTypeDef sConfig = {0};
     sConfig.Channel = bat.adcChannel;
     sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
         ErrorHandler();
@@ -58,19 +80,21 @@ void Battery_Health_Init(void)
 
 /**
  * @brief Returns current battery voltage.
- *
  * @param bat Battery object
  * @return Battery voltage as a float
  */
 float readBatteryVoltage(Battery *bat)
 {
+    float vref = getVREF(); // Dynamically get V_REF
+
     HAL_Delay(1);
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
     {
         int adcValue = HAL_ADC_GetValue(&hadc1);
-        float scaleFactor = (bat->R1 + bat->R2) / bat->R2;
-        float vOut = (adcValue / 4095.0) * bat->V_REF;
+        float scaleFactor = ((float)bat->R1 + (float)bat->R2) / (float)bat->R2;
+
+        float vOut = (adcValue / 4095.0) * vref;
         float batVoltage = vOut * scaleFactor;
 
         return batVoltage;

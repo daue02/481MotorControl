@@ -293,7 +293,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             getTicks(&ticks1, &ticks2);
             sendTicks(ticks1, ticks2);
 
-            // LOG_INFO("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
+            LOG_INFO("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

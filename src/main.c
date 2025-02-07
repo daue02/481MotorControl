@@ -41,6 +41,9 @@ int main(void)
 
   LOG_INFO("System Initialized");
 
+  float voltage = readBatteryVoltage(&bat);
+  LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+
   CommandData cmdData;
 
   while (1)
