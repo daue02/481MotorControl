@@ -1,9 +1,11 @@
 #include "uart.h"
 #include "encoder_hal.h"
+#include "battery_health.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
 #define TICK_BUF_SIZE 6
+#define BAT_BUF_SIZE 4
 
 UART_HandleTypeDef huart5;
 
@@ -19,6 +21,7 @@ volatile bool commandPending = false;
 uint8_t rxBuffer[RX_BUFFER_SIZE];
 uint8_t txBuffer[TX_BUFFER_SIZE];
 uint8_t ticksBuffer[TICK_BUF_SIZE];
+uint8_t batBuffer[BAT_BUF_SIZE];
 
 /**
  * @brief UART5 interrupt handler.
@@ -294,6 +297,21 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             sendTicks(ticks1, ticks2);
 
             // LOG_INFO("Sent encoder ticks: %ld, %ld", ticks1, ticks2);
+
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Battery voltage request
+        else if (tempBuffer[0] == 0x11 && bytesReceived == 1)
+        {
+            float voltage = readBatteryVoltage(&bat);
+            batBuffer[0] = 0x11;
+            batBuffer[1] = voltage;
+            batBuffer[2] = (int)(voltage * 100) % 100;
+            batBuffer[3] = (batBuffer[0] + batBuffer[1] + batBuffer[2]) % 256;
+
+            HAL_UART_Transmit_IT(&huart5, batBuffer, BAT_BUF_SIZE);
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

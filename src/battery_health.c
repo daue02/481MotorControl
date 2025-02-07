@@ -49,7 +49,7 @@ void Battery_Health_Init(void)
     ADC_ChannelConfTypeDef sConfig = {0};
     sConfig.Channel = bat.adcChannel;
     sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
         ErrorHandler();
@@ -64,7 +64,7 @@ void Battery_Health_Init(void)
  */
 float readBatteryVoltage(Battery *bat)
 {
-    HAL_Delay(1);
+    // HAL_Delay(1); // This delay doesn't work inside and ISR and we don't seem to need it
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
     {
