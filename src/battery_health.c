@@ -93,8 +93,7 @@ float readBatteryVoltage(Battery *bat)
     {
         int adcValue = HAL_ADC_GetValue(&hadc1);
         float scaleFactor = ((float)bat->R1 + (float)bat->R2) / (float)bat->R2;
-
-        float vOut = (adcValue / 4095.0) * vref;
+        float vOut = (adcValue / 2048.0) * vref;
         float batVoltage = vOut * scaleFactor;
 
         return batVoltage;
