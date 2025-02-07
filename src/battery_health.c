@@ -49,7 +49,7 @@ void Battery_Health_Init(void)
     ADC_ChannelConfTypeDef sConfig = {0};
     sConfig.Channel = bat.adcChannel;
     sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
         ErrorHandler();
