@@ -87,7 +87,7 @@ float readBatteryVoltage(Battery *bat)
 {
     float vref = getVREF(); // Dynamically get V_REF
 
-    HAL_Delay(1);
+    // HAL_Delay(1);
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
     {
