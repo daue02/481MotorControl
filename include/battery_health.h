@@ -13,6 +13,7 @@ typedef struct
     float R1;
     float R2;
     float V_REF;
+    float V_MIN;
 } Battery;
 
 extern Battery bat;

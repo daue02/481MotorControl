@@ -9,9 +9,10 @@ Battery bat =
         .adcPort = GPIOC,
         .adcPin = GPIO_PIN_1,
         .adcChannel = ADC_CHANNEL_11,
-        .R1 = 485000.0, // 470K, measured with multimeter
+        .R1 = 493000.0, // 470K, measured with multimeter
         .R2 = 38100.0,  // 3x 100K parallel + 5.1k series, measured with multimeter
         .V_REF = 3.3,
+        .V_MIN = 32.0, // Min safe range is 30-32V. Absolute minimum is 25V
 };
 
 /**
@@ -57,23 +58,31 @@ void Battery_Health_Init(void)
 }
 
 /**
- * @brief Returns current battery voltage.
+ * @brief Returns current battery voltage. Runs at start of code, and everytime the state is changed
  *
  * @param bat Battery object
  * @return Battery voltage as a float
  */
 float readBatteryVoltage(Battery *bat)
 {
-    // HAL_Delay(1); // This delay doesn't work inside and ISR and we don't seem to need it
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
-    {
-        int adcValue = HAL_ADC_GetValue(&hadc1);
-        float scaleFactor = (bat->R1 + bat->R2) / bat->R2;
-        float vOut = (adcValue / 4095.0) * bat->V_REF;
-        float batVoltage = vOut * scaleFactor;
+    // Poll multiple times and average
+    int numSamples = 10;
+    int totalAdcValue = 0;
 
-        return batVoltage;
+    for (int i = 0; i < numSamples; i++)
+    {
+        HAL_ADC_Start(&hadc1);
+        if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
+        {
+            totalAdcValue += HAL_ADC_GetValue(&hadc1);
+        }
+        HAL_Delay(1);
     }
-    return 0; // Return 0 if failed
+
+    float adcValue = totalAdcValue / (float)numSamples;
+    float scaleFactor = (bat->R1 + bat->R2) / bat->R2;
+    float vOut = (adcValue / 4095.0) * bat->V_REF;
+    float batVoltage = vOut * scaleFactor;
+
+    return batVoltage;
 }

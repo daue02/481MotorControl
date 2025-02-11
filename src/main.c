@@ -35,7 +35,7 @@ int main(void)
   Drill_Init();
   Encoder_Init();
   HMI_Init();
-  Limit_Switch_Init();
+  // Limit_Switch_Init();
   Motors_Init();
   UART_Init();
 
@@ -56,6 +56,16 @@ int main(void)
         {
           currentCommand = cmdData;
           commandPending = true;
+
+          // Check battery voltage each time we recieve a position command
+          // If too low, send robot to faulted state
+          float voltage = readBatteryVoltage(&bat);
+          if (voltage < bat.V_MIN)
+          {
+            LOG_ERROR("Battery Voltage LOW: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+            ErrorHandler();
+          }
+
           if (1) // Automatic sequence
           {
             LOG_INFO("Automatic sequence activated");
