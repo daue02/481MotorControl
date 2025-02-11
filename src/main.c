@@ -35,7 +35,7 @@ int main(void)
   Drill_Init();
   Encoder_Init();
   HMI_Init();
-  // Limit_Switch_Init();
+  Limit_Switch_Init();
   Motors_Init();
   UART_Init();
 
