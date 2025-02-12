@@ -44,7 +44,10 @@ int main(void)
   LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
 
   // CommandData cmdData;
-  currentCommand.position = 25;
+  currentCommand.position = 125; // REMOVE
+
+  SystemHealthCheck();
+  HomeMotors();
 
   while (1)
   {
@@ -52,20 +55,18 @@ int main(void)
     {
       LOG_INFO("Automatic sequence activated");
       SystemHealthCheck();
-      HomeMotors();
-      HAL_Delay(60000);
-      // updateStateMachine("Positioning");
-      // MoveTo(currentCommand.position, -25);
-      // updateStateMachine("Drilling");
-      // // Start the drill motion here
-      // MoveTo(currentCommand.position, 100);
-      // // Stop the drill motion here
-      // updateStateMachine("Positioning");
-      // HAL_Delay(500);
-      // MoveTo(currentCommand.position, -25);
-      // MoveTo(50, -190);
-      // // Would add the bit-clearing stuff here
-      // updateStateMachine("Waiting");
+      updateStateMachine("Positioning");
+      MoveTo(currentCommand.position, -25);
+      updateStateMachine("Drilling");
+      // Start the drill motion here
+      MoveTo(currentCommand.position, motorZ.posMax);
+      // Stop the drill motion here
+      updateStateMachine("Positioning");
+      HAL_Delay(500);
+      MoveTo(currentCommand.position, -25);
+      MoveTo(motorY.posMin, motorZ.posMin);
+      updateStateMachine("Waiting");
+      HAL_Delay(5000);
     }
 
     /*

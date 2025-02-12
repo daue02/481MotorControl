@@ -26,7 +26,7 @@ Motor motorY = {
     .stepsPerRev = 200, // 200PPR * no microstep
     .lead = 8,
     .posMin = 0,
-    .posMax = 248.27,
+    .posMax = 219.62, // See 2025-02-11 Electrical OneNote (ED)
     .isMoving = 0,
 };
 
@@ -41,8 +41,8 @@ Motor motorZ = {
     .dir = CCW,
     .stepsPerRev = 200, // 200PPR
     .lead = 5,
-    .posMin = -200,
-    .posMax = 111.3,
+    .posMin = -93.2, // See 2025-02-11 Electrical OneNote (ED)
+    .posMax = 113.1, // See 2025-02-11 Electrical OneNote (ED)
     .isMoving = 0,
 };
 
@@ -75,8 +75,6 @@ void Motor_Init(Motor motor)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(motor.sleepPort, &GPIO_InitStruct);
-
-    LOG_INFO("%s initialized", motor.name);
 }
 
 /**
@@ -106,7 +104,6 @@ void Motors_Init(void)
  */
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {
-    LOG_INFO("Moving %s by %d", motor->name, (int)dist);
     HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
 
     if (dist > 0)
@@ -318,6 +315,10 @@ void HomeMotors(void)
     LOG_INFO("Homing...");
     updateStateMachine("Homing");
 
+    // Use these lines to set current limits on initial bootup
+    // HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, 1);
+    // HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, 1);
+
     // Set positions to max so motor is allowed to move in min direction
     state.y = motorY.posMax;
     state.z = motorZ.posMax;
@@ -337,8 +338,12 @@ void HomeMotors(void)
         HAL_Delay(1);
     }
 
-    // Update the state machine
+    // Update min position to avoid limit switch contact
+    motorY.posMin += 6.21; // As measured for 5mm command 12-FEB-2025 ED
+    motorZ.posMin += 7.21; // As measured for 5mm command 12-FEB-2025 ED
+
+    state.y = motorY.posMin;
+    state.z = motorZ.posMin;
+
     updateStateMachine("Waiting");
-    state.y = motorY.posMin + 7.00; // As measured for 5mm command 22-NOV-2024
-    state.z = motorZ.posMin + 6.82; // As measured for 5mm command 22-NOV-2024
 }

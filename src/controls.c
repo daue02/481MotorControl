@@ -83,7 +83,7 @@ double calculateRPM(double delta)
     }
     else if (state.homing)
     {
-        return 100.0;
+        return 200.0;
     }
     else
     {
