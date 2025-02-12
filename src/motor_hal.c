@@ -64,11 +64,19 @@ void Motor_Init(Motor motor)
 
     // Direction Pin
     GPIO_InitStruct.Pin = motor.dirPin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(motor.dirPort, &GPIO_InitStruct);
 
     // Sleep pin
     GPIO_InitStruct.Pin = motor.sleepPin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(motor.sleepPort, &GPIO_InitStruct);
+
+    LOG_INFO("%s initialized", motor.name);
 }
 
 /**
@@ -98,6 +106,7 @@ void Motors_Init(void)
  */
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {
+    LOG_INFO("Moving %s by %d", motor->name, (int)dist);
     HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
 
     if (dist > 0)
@@ -114,7 +123,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Divide by 2, since each interrupt is a toggle
     motor->stepsToCompleteOrig = motor->stepsToComplete;
-    double accelTime = 0.25;                                                                    // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
+    double accelTime = 0.5;                                                                     // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
     double nominalTime = (double)motor->stepsToComplete / motor->stepsPerRev / speedRPM * 60.0; // Time to move at cnst speed
 
     if (accelTime * 2 > nominalTime)

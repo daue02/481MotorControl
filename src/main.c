@@ -43,10 +43,32 @@ int main(void)
   float voltage = readBatteryVoltage(&bat);
   LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
 
-  CommandData cmdData;
+  // CommandData cmdData;
+  currentCommand.position = 25;
 
   while (1)
   {
+    if (1) // Automatic sequence
+    {
+      LOG_INFO("Automatic sequence activated");
+      SystemHealthCheck();
+      HomeMotors();
+      HAL_Delay(60000);
+      // updateStateMachine("Positioning");
+      // MoveTo(currentCommand.position, -25);
+      // updateStateMachine("Drilling");
+      // // Start the drill motion here
+      // MoveTo(currentCommand.position, 100);
+      // // Stop the drill motion here
+      // updateStateMachine("Positioning");
+      // HAL_Delay(500);
+      // MoveTo(currentCommand.position, -25);
+      // MoveTo(50, -190);
+      // // Would add the bit-clearing stuff here
+      // updateStateMachine("Waiting");
+    }
+
+    /*
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -109,6 +131,7 @@ int main(void)
     }
 
     HAL_Delay(1);
+  */
   }
 }
 
