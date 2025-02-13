@@ -39,9 +39,7 @@ int main(void)
   UART_Init();
 
   LOG_INFO("System Initialized");
-
-  // CommandData cmdData;
-  currentCommand.position = 200; // REMOVE
+  CommandData cmdData;
 
   updateStateMachine("Unhomed");
   SystemHealthCheck();
@@ -49,25 +47,6 @@ int main(void)
 
   while (1)
   {
-    if (1) // Automatic sequence
-    {
-      LOG_INFO("Automatic sequence activated");
-      SystemHealthCheck();
-      updateStateMachine("Positioning");
-      MoveTo(currentCommand.position, -25);
-      updateStateMachine("Drilling");
-      setDrillPower(50);
-      MoveTo(currentCommand.position, motorZ.posMax);
-      setDrillPower(0);
-      updateStateMachine("Positioning");
-      HAL_Delay(500);
-      MoveTo(currentCommand.position, -25);
-      MoveTo(motorY.posMin, motorZ.posMin);
-      updateStateMachine("Waiting");
-      HAL_Delay(5000);
-    }
-
-    /*
     if (rxReady)
     {
       int status = receiveMessage(&cmdData);
@@ -82,19 +61,18 @@ int main(void)
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
-            HomeMotors();
             updateStateMachine("Positioning");
             MoveTo(currentCommand.position, -25);
             updateStateMachine("Drilling");
-            // Start the drill motion here
-            MoveTo(currentCommand.position, 100);
-            // Stop the drill motion here
+            setDrillPower(50);
+            MoveTo(currentCommand.position, motorZ.posMax);
+            setDrillPower(0);
             updateStateMachine("Positioning");
             HAL_Delay(500);
             MoveTo(currentCommand.position, -25);
-            MoveTo(50, -190);
-            // Would add the bit-clearing stuff here
+            MoveTo(motorY.posMin, motorZ.posMin);
             updateStateMachine("Waiting");
+            HAL_Delay(5000);
           }
           else // Manual sequence
           {
@@ -119,9 +97,7 @@ int main(void)
       }
       motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
-
     HAL_Delay(1);
-  */
   }
 }
 
