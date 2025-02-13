@@ -26,7 +26,10 @@ Motor motorY = {
     .stepsPerRev = 200, // 200PPR * no microstep
     .lead = 8,
     .posMin = 0,
-    .posMax = 219.62, // See 2025-02-11 Electrical OneNote (ED)
+    .posMax = 219.62,   // See 2025-02-11 Electrical OneNote (ED)
+    .drillingSpeed = 0, // Y movements should never happen when drilling
+    .homingSpeed = 35,  // Z motor seems to lock up if increasing being 35, 2025-02-13 ED
+    .positioningSpeed = 100,
     .isMoving = 0,
 };
 
@@ -43,6 +46,9 @@ Motor motorZ = {
     .lead = 5,
     .posMin = -93.2, // See 2025-02-11 Electrical OneNote (ED)
     .posMax = 113.1, // See 2025-02-11 Electrical OneNote (ED)
+    .drillingSpeed = 10,
+    .homingSpeed = 35, // Z motor seems to lock up if increasing being 35, 2025-02-13 ED
+    .positioningSpeed = 100,
     .isMoving = 0,
 };
 

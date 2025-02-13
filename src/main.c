@@ -41,7 +41,7 @@ int main(void)
   LOG_INFO("System Initialized");
 
   // CommandData cmdData;
-  currentCommand.position = 125; // REMOVE
+  currentCommand.position = 200; // REMOVE
 
   SystemHealthCheck();
   HomeMotors();

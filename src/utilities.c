@@ -128,6 +128,8 @@ double batVoltagetoPercent(double v)
             return SoC[i] + (v - Voltage[i]) * (SoC[i + 1] - SoC[i]) / (Voltage[i + 1] - Voltage[i]);
         }
     }
+
+    return -1; // Should never reach here - just to avoid caution
 }
 
 /**
