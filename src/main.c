@@ -1,5 +1,5 @@
 #include "main.h"
-#include "battery_health.h"
+#include "utilities.h"
 #include "controls.h"
 #include "drill_hal.h"
 #include "encoder_hal.h"
@@ -20,7 +20,6 @@ void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
-void SystemHealthCheck(void);
 
 int main(void)
 {
@@ -40,8 +39,6 @@ int main(void)
   UART_Init();
 
   LOG_INFO("System Initialized");
-  float voltage = readBatteryVoltage(&bat);
-  LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
 
   // CommandData cmdData;
   currentCommand.position = 125; // REMOVE
@@ -79,15 +76,6 @@ int main(void)
         {
           currentCommand = cmdData;
           commandPending = true;
-
-          // Check battery voltage each time we recieve a position command
-          // If too low, send robot to faulted state
-          float voltage = readBatteryVoltage(&bat);
-          if (voltage < bat.V_MIN)
-          {
-            LOG_ERROR("Battery Voltage LOW: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
-            ErrorHandler();
-          }
 
           if (1) // Automatic sequence
           {
@@ -179,6 +167,7 @@ void SystemClockConfig(void)
   RCC_OscInitStruct.PLL.PLLR = 6;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
+    LOG_ERROR("ClockConfig - Enabling HSI Oscillator - Failed");
     ErrorHandler();
   }
 
@@ -200,19 +189,8 @@ void SystemClockConfig(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
+    LOG_ERROR("ClockConfig - Configuring HCLK, PCKL1, PCKL2 - Failed");
     ErrorHandler();
-  }
-}
-
-/**
- * @brief Will hold the device in an infinte loop on error.
- *
- */
-void ErrorHandler(void)
-{
-  updateStateMachine("Faulted");
-  while (1)
-  {
   }
 }
 
@@ -234,6 +212,7 @@ void Serial_Init(void)
 
   if (HAL_UART_Init(&UartHandle) != HAL_OK)
   {
+    LOG_ERROR("Serial Initialization Failed");
     ErrorHandler();
   }
 }
@@ -312,35 +291,4 @@ void SerialDemo(void)
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
   }
-}
-
-/**
- * @brief Put all system health checks here
- *
- */
-void SystemHealthCheck(void)
-{
-  // Check that all limit switches are closed (NC switched).
-  if (ySW_pos.Pin_state)
-  {
-    LOG_ERROR("Error: check Y+ sw");
-  }
-  else if (ySW_neg.Pin_state)
-  {
-    LOG_ERROR("Error: check Y- sw");
-  }
-  else if (zSW_pos.Pin_state)
-  {
-    LOG_ERROR("Error: check Z+ sw");
-  }
-  else if (zSW_neg.Pin_state)
-  {
-    LOG_ERROR("Error: check Z- sw");
-  }
-  else
-  {
-    updateStateMachine("Unhomed");
-    return;
-  }
-  ErrorHandler();
 }

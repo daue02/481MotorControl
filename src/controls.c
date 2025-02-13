@@ -1,7 +1,8 @@
 #include "controls.h"
-#include "motor_hal.h"
-#include "limit_switch_hal.h"
 #include "hmi_hal.h"
+#include "limit_switch_hal.h"
+#include "motor_hal.h"
+#include "utilities.h"
 
 double calculateRPM(double delta);
 void PrintState(bool posOnly);
@@ -87,6 +88,7 @@ double calculateRPM(double delta)
     }
     else
     {
+        LOG_ERROR("Move command issued outside of expected state");
         ErrorHandler(); // Robot should only receive move commands in 'positioning', 'homing', or 'drilling' states
         return 0;
     }

@@ -1,7 +1,11 @@
 #include "stm32f4xx_hal.h"
-#include "battery_health.h"
+#include "controls.h"
+#include "limit_switch_hal.h"
+#include "utilities.h"
 
 ADC_HandleTypeDef hadc1;
+
+void ErrorHandler(void);
 
 Battery bat =
     {
@@ -44,6 +48,7 @@ void Battery_Health_Init(void)
     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
     if (HAL_ADC_Init(&hadc1) != HAL_OK)
     {
+        LOG_ERROR("Battery ADC init failed");
         ErrorHandler();
     }
 
@@ -53,6 +58,7 @@ void Battery_Health_Init(void)
     sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
+        LOG_ERROR("Battery ADC init failed");
         ErrorHandler();
     }
 }
@@ -85,4 +91,56 @@ float readBatteryVoltage(Battery *bat)
     float batVoltage = vOut * scaleFactor;
 
     return batVoltage;
+}
+
+/**
+ * @brief Check limit switch continuity and battery health
+ *
+ */
+void SystemHealthCheck(void)
+{
+    // Check and display battery voltage; Fault out if too low
+    float voltage = readBatteryVoltage(&bat);
+    if (voltage < bat.V_MIN)
+    {
+        LOG_ERROR("Battery Voltage LOW: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+        ErrorHandler();
+    }
+    LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+
+    // Check that all limit switches are closed (NC switched).
+    if (ySW_pos.Pin_state)
+    {
+        LOG_ERROR("Check Y+ sw");
+    }
+    else if (ySW_neg.Pin_state)
+    {
+        LOG_ERROR("Check Y- sw");
+    }
+    else if (zSW_pos.Pin_state)
+    {
+        LOG_ERROR("Check Z+ sw");
+    }
+    else if (zSW_neg.Pin_state)
+    {
+        LOG_ERROR("Check Z- sw");
+    }
+    else
+    {
+        updateStateMachine("Unhomed");
+        return;
+    }
+    ErrorHandler();
+}
+
+/**
+ * @brief Will hold the device in an infinte loop on error.
+ *
+ */
+void ErrorHandler(void)
+{
+    updateStateMachine("Faulted");
+    while (1)
+    {
+    }
 }

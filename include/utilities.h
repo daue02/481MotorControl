@@ -1,6 +1,6 @@
 // Define to prevent recursive inclusion
-#ifndef __BATTERY_HEALTH_H
-#define __BATTERY_HEALTH_H
+#ifndef __UTILITIES_H
+#define __UTILITIES_H
 
 #include "main.h"
 
@@ -20,5 +20,7 @@ extern Battery bat;
 
 void Battery_Health_Init(void);
 float readBatteryVoltage(Battery *bat);
+void SystemHealthCheck(void);
+void ErrorHandler(void);
 
 #endif

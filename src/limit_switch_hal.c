@@ -173,8 +173,8 @@ void EXTI9_5_IRQHandler(void)
         // Pi starts sending interrupt
         if (piSW_state)
         {
-            ErrorHandler();
             LOG_ERROR("Interrupt received from Pi");
+            ErrorHandler();
         }
         // Pi stops sending interrupt
         else

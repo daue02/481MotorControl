@@ -1,6 +1,6 @@
 #include "uart.h"
 #include "encoder_hal.h"
-#include "battery_health.h"
+#include "utilities.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -56,6 +56,7 @@ void UART_Init()
 
     if (HAL_UART_Init(&huart5) != HAL_OK)
     {
+        LOG_ERROR("UART init failed");
         ErrorHandler();
     }
 
@@ -122,7 +123,7 @@ int receiveMessage(CommandData *cmdData)
     }
     else
     {
-        LOG_ERROR("Checksum error");
+        LOG_ERROR("Checksum failed");
         // Send error message back
         constructMessage(0x04, 0, 0, txBuffer); // Error message
         HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
