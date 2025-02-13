@@ -94,6 +94,43 @@ float readBatteryVoltage(Battery *bat)
 }
 
 /**
+ * @brief Converts battery voltage to a percentage. Only valid under low current.
+ *
+ * @param v Battery charge [V]
+ * @return Battery charge [%]
+ */
+double batVoltagetoPercent(double v)
+{
+    double SoC[12] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    double Voltage[12] = {30.0, 34.5, 36.8, 37.4, 37.7, 37.9, 38.2, 38.7, 39.2, 39.8, 40.6, 42.0};
+
+    // Check if voltage is out of range
+    if (v < Voltage[0] || v > Voltage[11])
+    {
+        return -1; // Out of range
+    }
+
+    // If voltage exactly matches a table value, return corresponding SoC
+    for (int i = 0; i < 12; i++)
+    {
+        if (v == Voltage[i])
+        {
+            return SoC[i];
+        }
+    }
+
+    // If not, linearly interpolate
+    for (int i = 0; i < 11; i++)
+    {
+        if (v > Voltage[i] && v < Voltage[i + 1])
+        {
+            // Linear interpolation formula: y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
+            return SoC[i] + (v - Voltage[i]) * (SoC[i + 1] - SoC[i]) / (Voltage[i + 1] - Voltage[i]);
+        }
+    }
+}
+
+/**
  * @brief Check limit switch continuity and battery health
  *
  */
@@ -101,12 +138,13 @@ void SystemHealthCheck(void)
 {
     // Check and display battery voltage; Fault out if too low
     float voltage = readBatteryVoltage(&bat);
+    double percent = batVoltagetoPercent(voltage);
     if (voltage < bat.V_MIN)
     {
-        LOG_ERROR("Battery Voltage LOW: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+        LOG_ERROR("Battery Voltage LOW: %d.%02dV (%d%%)", (int)voltage, (int)(voltage * 100) % 100, (int)percent);
         ErrorHandler();
     }
-    LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
+    LOG_INFO("Battery Voltage: %d.%02dV (%d%%)", (int)voltage, (int)(voltage * 100) % 100, (int)percent);
 
     // Check that all limit switches are closed (NC switched).
     if (ySW_pos.Pin_state)
