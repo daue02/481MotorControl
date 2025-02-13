@@ -14,8 +14,6 @@
 #include <string.h>
 #include <stdint.h>
 
-void ErrorHandler(void);
-
 /* Definition for USARTx clock resources */
 #define USARTx USART2
 #define USARTx_CLK_ENABLE() __HAL_RCC_USART2_CLK_ENABLE();

@@ -5,8 +5,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "motor_hal.h"
 #include "main.h"
+#include "motor_hal.h"
 
 /**
  * @brief Robot state machine

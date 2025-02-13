@@ -1,5 +1,5 @@
 #include "main.h"
-#include "battery_health.h"
+#include "utilities.h"
 #include "controls.h"
 #include "drill_hal.h"
 #include "encoder_hal.h"
@@ -20,7 +20,6 @@ void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
-void SystemHealthCheck(void);
 
 int main(void)
 {
@@ -40,10 +39,11 @@ int main(void)
   UART_Init();
 
   LOG_INFO("System Initialized");
-  float voltage = readBatteryVoltage(&bat);
-  LOG_INFO("Battery Voltage: %d.%02d", (int)voltage, (int)(voltage * 100) % 100);
-
   CommandData cmdData;
+
+  updateStateMachine("Unhomed");
+  SystemHealthCheck();
+  HomeMotors();
 
   while (1)
   {
@@ -56,23 +56,23 @@ int main(void)
         {
           currentCommand = cmdData;
           commandPending = true;
+
           if (1) // Automatic sequence
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
-            HomeMotors();
             updateStateMachine("Positioning");
             MoveTo(currentCommand.position, -25);
             updateStateMachine("Drilling");
-            // Start the drill motion here
-            MoveTo(currentCommand.position, 100);
-            // Stop the drill motion here
+            setDrillPower(50);
+            MoveTo(currentCommand.position, motorZ.posMax);
+            setDrillPower(0);
             updateStateMachine("Positioning");
             HAL_Delay(500);
             MoveTo(currentCommand.position, -25);
-            MoveTo(50, -190);
-            // Would add the bit-clearing stuff here
+            MoveTo(motorY.posMin, motorZ.posMin);
             updateStateMachine("Waiting");
+            HAL_Delay(5000);
           }
           else // Manual sequence
           {
@@ -97,7 +97,6 @@ int main(void)
       }
       motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
-
     HAL_Delay(1);
   }
 }
@@ -145,6 +144,7 @@ void SystemClockConfig(void)
   RCC_OscInitStruct.PLL.PLLR = 6;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
+    LOG_ERROR("ClockConfig - Enabling HSI Oscillator - Failed");
     ErrorHandler();
   }
 
@@ -166,19 +166,8 @@ void SystemClockConfig(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
+    LOG_ERROR("ClockConfig - Configuring HCLK, PCKL1, PCKL2 - Failed");
     ErrorHandler();
-  }
-}
-
-/**
- * @brief Will hold the device in an infinte loop on error.
- *
- */
-void ErrorHandler(void)
-{
-  updateStateMachine("Faulted");
-  while (1)
-  {
   }
 }
 
@@ -200,6 +189,7 @@ void Serial_Init(void)
 
   if (HAL_UART_Init(&UartHandle) != HAL_OK)
   {
+    LOG_ERROR("Serial Initialization Failed");
     ErrorHandler();
   }
 }
@@ -278,35 +268,4 @@ void SerialDemo(void)
       HAL_Delay(1); // Prevent user from sending another request while still moving
     }
   }
-}
-
-/**
- * @brief Put all system health checks here
- *
- */
-void SystemHealthCheck(void)
-{
-  // Check that all limit switches are closed (NC switched).
-  if (ySW_pos.Pin_state)
-  {
-    LOG_ERROR("Error: check Y+ sw");
-  }
-  else if (ySW_neg.Pin_state)
-  {
-    LOG_ERROR("Error: check Y- sw");
-  }
-  else if (zSW_pos.Pin_state)
-  {
-    LOG_ERROR("Error: check Z+ sw");
-  }
-  else if (zSW_neg.Pin_state)
-  {
-    LOG_ERROR("Error: check Z- sw");
-  }
-  else
-  {
-    updateStateMachine("Unhomed");
-    return;
-  }
-  ErrorHandler();
 }

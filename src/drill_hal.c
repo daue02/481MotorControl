@@ -19,7 +19,7 @@ void Drill_Init(void)
 {
     motorDrill.currentPower = 0;
     motorDrill.targetPower = 0;
-    motorDrill.accel = 5; // % per sec
+    motorDrill.accel = 25; // % per sec
     MX_TIM2_Init();
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
 }
@@ -32,21 +32,23 @@ void Drill_Init(void)
 void setDrillPower(int power)
 {
     motorDrill.targetPower = power;
+    LOG_INFO("Setting drill to %d%% power", power);
     while (motorDrill.targetPower != motorDrill.currentPower)
     {
         if (motorDrill.targetPower > motorDrill.currentPower)
         {
-            motorDrill.currentPower = motorDrill.currentPower + 1;
+            motorDrill.currentPower++;
         }
         else if (motorDrill.targetPower < motorDrill.currentPower)
         {
-            motorDrill.currentPower = motorDrill.currentPower - 1;
+            motorDrill.currentPower--;
         }
 
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
+        uint32_t pwmValue = (uint32_t)(((double)htim2.Init.Period / 100.0) * motorDrill.currentPower);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwmValue);
         HAL_Delay(1 / (motorDrill.accel / 1000));
-        LOG_INFO("Power level: %d", motorDrill.currentPower); // Use the logging macro
     }
+    LOG_INFO("Drill set to %d%% power", power);
 }
 
 static void MX_TIM2_Init(void)

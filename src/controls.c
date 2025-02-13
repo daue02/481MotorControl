@@ -1,9 +1,10 @@
 #include "controls.h"
-#include "motor_hal.h"
-#include "limit_switch_hal.h"
 #include "hmi_hal.h"
+#include "limit_switch_hal.h"
+#include "motor_hal.h"
+#include "utilities.h"
 
-double calculateRPM(double delta);
+double calculateRPM(Motor *motor);
 void PrintState(bool posOnly);
 
 /**
@@ -24,8 +25,8 @@ void MoveTo(double y, double z)
     }
     else
     {
-        double yRPM = calculateRPM(deltaY);
-        double zRPM = calculateRPM(deltaZ);
+        double yRPM = calculateRPM(&motorY);
+        double zRPM = calculateRPM(&motorZ);
         deltaY = MoveByDist(&motorY, deltaY, yRPM);
         deltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
         state.y += deltaY;
@@ -57,39 +58,32 @@ void MoveBy(double rel_y, double rel_z)
 /**
  * @brief Calculates RPM based on robot state and move distance
  *
- * @param delta Distance of the move
+ * @param Motor motor to find RPM of
  * @return Resultant RPM
  */
-double calculateRPM(double delta)
+double calculateRPM(Motor *motor)
 {
+    double linSpeed = 0;
+
     if (state.drilling)
     {
-        return 100.0;
-    }
-    else if (state.positioning)
-    {
-        if (abs(delta) < 25.0)
-        {
-            return 150.0;
-        }
-        else if (abs(delta) < 75)
-        {
-            return 300.0;
-        }
-        else
-        {
-            return 400.0;
-        }
+        linSpeed = motor->drillingSpeed;
     }
     else if (state.homing)
     {
-        return 150.0;
+        linSpeed = motor->homingSpeed;
+    }
+    else if (state.positioning)
+    {
+        linSpeed = motor->positioningSpeed;
     }
     else
     {
+        LOG_ERROR("Move command issued outside of expected state");
         ErrorHandler(); // Robot should only receive move commands in 'positioning', 'homing', or 'drilling' states
-        return 0;
     }
+
+    return linSpeed / motor->lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
 }
 
 /**
