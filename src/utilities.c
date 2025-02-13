@@ -124,7 +124,6 @@ double batVoltagetoPercent(double v)
     {
         if (v > Voltage[i] && v < Voltage[i + 1])
         {
-            // Linear interpolation formula: y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
             return SoC[i] + (v - Voltage[i]) * (SoC[i + 1] - SoC[i]) / (Voltage[i + 1] - Voltage[i]);
         }
     }
@@ -167,7 +166,6 @@ void SystemHealthCheck(void)
     }
     else
     {
-        updateStateMachine("Unhomed");
         return;
     }
     ErrorHandler();

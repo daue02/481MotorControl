@@ -93,6 +93,16 @@ void Limit_Switch_Init(void)
  */
 void EXTI9_5_IRQHandler(void)
 {
+    // Temporary fix to work around false Z triggers when drilling - 2025-02-13 ED
+    if (state.drilling)
+    {
+        HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin);
+        HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);
+        HAL_GPIO_EXTI_IRQHandler(zSW_pos.pin);
+        HAL_GPIO_EXTI_IRQHandler(zSW_neg.pin);
+        return;
+    }
+
     GPIO_PinState yPin_p_state = HAL_GPIO_ReadPin(ySW_pos.port, ySW_pos.pin);
     GPIO_PinState yPin_n_state = HAL_GPIO_ReadPin(ySW_neg.port, ySW_neg.pin);
 

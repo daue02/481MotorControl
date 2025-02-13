@@ -43,6 +43,7 @@ int main(void)
   // CommandData cmdData;
   currentCommand.position = 200; // REMOVE
 
+  updateStateMachine("Unhomed");
   SystemHealthCheck();
   HomeMotors();
 
@@ -55,9 +56,9 @@ int main(void)
       updateStateMachine("Positioning");
       MoveTo(currentCommand.position, -25);
       updateStateMachine("Drilling");
-      // Start the drill motion here
+      setDrillPower(50);
       MoveTo(currentCommand.position, motorZ.posMax);
-      // Stop the drill motion here
+      setDrillPower(0);
       updateStateMachine("Positioning");
       HAL_Delay(500);
       MoveTo(currentCommand.position, -25);
