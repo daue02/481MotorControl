@@ -1,5 +1,4 @@
 #include "controls.h"
-#include "hmi_hal.h"
 #include "limit_switch_hal.h"
 #include "motor_hal.h"
 #include "utilities.h"
