@@ -246,86 +246,53 @@ void ErrorHandler(void)
 }
 
 /**
- * @brief Flashes an LED at a slow (0.5s) or fast (0.1s) pace
+ * @brief Changes overall LED state
  *
- * @param led LED to flash
- * @param speed period in [s]
- */
-void flashLED(LED led, double speed)
-{
-    double timerPeriod = 1000000 * speed; // 1MHz clock * Speed
-    activeLED.port = led.port;
-    activeLED.pin = led.pin;
-    __HAL_TIM_SetCounter(&htim5, 0);
-    __HAL_TIM_SET_AUTORELOAD(&htim5, timerPeriod);
-    HAL_TIM_Base_Start_IT(&htim5);
-}
-
-/**
- * @brief Turns an LED on
- *
- * @param led LED to turn on
- */
-void solidLED(LED led)
-{
-    HAL_TIM_Base_Stop_IT(&htim5);
-    HAL_GPIO_WritePin(led.port, led.pin, GPIO_PIN_SET);
-}
-
-/**
- * @brief Turns an LED off
- *
- * @param led LED to turn off
- */
-void stopLED(LED led)
-{
-    HAL_TIM_Base_Stop_IT(&htim5);
-    HAL_GPIO_WritePin(led.port, led.pin, GPIO_PIN_RESET);
-}
-
-/**
- * @brief Changes state of LEDs
- *
- * @param led Button/LED object
- * @param ledMode Slow, Fast, or Solid
+ * @param led LED object
+ * @param ledMode Slow, Fast, Solid
  */
 void changeLEDState(LED led, const char *ledMode)
 {
-    if (strcmp(led.name, "greenLED") == 0)
+    // Shut off the other LED
+    if (strcmp(led.name,"greenLED") == 0)
     {
-        if (strcmp(ledMode, "Slow") == 0)
-        {
-            stopLED(redLED);
-            flashLED(greenLED, 0.5);
-        }
-        else if (strcmp(ledMode, "Fast") == 0)
-        {
-            stopLED(redLED);
-            flashLED(greenLED, 0.1);
-        }
-        else
-        {
-            stopLED(redLED);
-            solidLED(greenLED);
-        }
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(redLED.port, redLED.pin, GPIO_PIN_RESET);        
     }
     else
     {
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(greenLED.port, greenLED.pin, GPIO_PIN_RESET);  
+    }
+
+    // Set this LED to slow, fast, or solid
+    if (strcmp(ledMode, "Slow") == 0 || strcmp(ledMode, "Fast") == 0)
+    {
+        double flashSpeed = 0;
         if (strcmp(ledMode, "Slow") == 0)
         {
-            stopLED(greenLED);
-            flashLED(redLED, 0.5);
-        }
-        else if (strcmp(ledMode, "Fast") == 0)
-        {
-            stopLED(greenLED);
-            flashLED(redLED, 0.1);
+            flashSpeed = 0.5; // Slow interval [s]
         }
         else
         {
-            stopLED(greenLED);
-            solidLED(redLED);
+            flashSpeed = 0.1; // Fast interval [s]
         }
+        double timerPeriod = 1000000 * flashSpeed; // 1MHz clock * Speed
+        activeLED.port = led.port;
+        activeLED.pin = led.pin;
+        __HAL_TIM_SetCounter(&htim5, 0);
+        __HAL_TIM_SET_AUTORELOAD(&htim5, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim5);
+    }
+    else if (strcmp(ledMode, "Solid") == 0)
+    {
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(led.port, led.pin, GPIO_PIN_SET);
+    }
+    else
+    {
+        LOG_ERROR("Invalid LED type commanded");
+        ErrorHandler();
     }
 }
 
