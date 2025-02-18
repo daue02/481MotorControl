@@ -59,13 +59,13 @@ int main(void)
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
-            updateStateMachine("Positioning");
+            updateStateMachine("Moving");
             MoveTo(currentCommand.position, -25);
             updateStateMachine("Drilling");
             setDrillPower(50);
             MoveTo(currentCommand.position, motorZ.posMax);
             setDrillPower(0);
-            updateStateMachine("Positioning");
+            updateStateMachine("Moving");
             HAL_Delay(500);
             MoveTo(currentCommand.position, -25);
             MoveTo(motorY.posMin, motorZ.posMin);
