@@ -8,6 +8,7 @@
 #define Z_SAFE -25.0
 
 void MoveTo(double y, double z);
+void checkMoveIsValid(double y, double z);
 
 /**
  * @brief Moves the y axis into position over weed, lowers drill to near-ground
@@ -45,29 +46,23 @@ void removeWeed(double y, int drillPower)
  */
 void MoveTo(double y, double z)
 {
+    checkMoveIsValid(y, z);
+
     double deltaY = y - state.y;
     double deltaZ = z - state.z;
-
-    if (y > motorY.posMax || y < motorY.posMin || z > motorZ.posMax || z < motorZ.posMin)
-    {
-        LOG_ERROR("Move is outside of range!");
-        ErrorHandler();
-    }
-    else
-    {
-        double yRPM = motorY.speed / motorY.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
-        double zRPM = motorZ.speed / motorZ.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
-        deltaY = MoveByDist(&motorY, deltaY, yRPM);
-        deltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
-        state.y += deltaY;
-        state.z += deltaZ;
-    }
+    double yRPM = motorY.speed / motorY.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
+    double zRPM = motorZ.speed / motorZ.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
+    deltaY = MoveByDist(&motorY, deltaY, yRPM);
+    deltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
+    state.y += deltaY;
+    state.z += deltaZ;
 
     // Wait for movement before accepting more
     while (motorsMoving())
     {
         HAL_Delay(1);
     }
+
     PrintCartesianCoords();
 }
 
@@ -83,6 +78,41 @@ void MoveBy(double rel_y, double rel_z)
     double new_z = state.z + rel_z;
 
     MoveTo(new_y, new_z);
+}
+
+/**
+ * @brief Checks the requested move is valid/safe
+ *
+ * @param y coordniate.
+ * @param z coordinate.
+ */
+void checkMoveIsValid(double y, double z)
+{
+    if (y > motorY.posMax)
+    {
+        LOG_ERROR("Y movement exceeds maximum range");
+    }
+    else if (y < motorY.posMin)
+    {
+        LOG_ERROR("Y movement exceeds minimum range");
+    }
+    else if (z > motorZ.posMax)
+    {
+        LOG_ERROR("Z movement exceeds maximum range");
+    }
+    else if (z < motorZ.posMin)
+    {
+        LOG_ERROR("Z movement exceeds minimum range");
+    }
+    else if (y != state.y && z > Z_SAFE)
+    {
+        LOG_ERROR("Y cannot be moved when Z is near or below ground");
+    }
+    else
+    {
+        return;
+    }
+    ErrorHandler();
 }
 
 /**
