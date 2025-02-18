@@ -268,13 +268,13 @@ void TIM4_IRQHandler(void)
  */
 uint32_t CalculateMotorSpeed(Motor *motor)
 {
-    if (state.unhomed)
-    {
-        float timePerStep = 60.0 / (motor->targetRPM * motor->stepsPerRev); // Time per step in seconds
-        uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1; // Time per toggle, in microseconds
+    // if (state.unhomed)
+    // {
+    //     float timePerStep = 60.0 / (motor->targetRPM * motor->stepsPerRev); // Time per step in seconds
+    //     uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1; // Time per toggle, in microseconds
 
-        return timerPeriod;
-    }
+    //     return timerPeriod;
+    // }
 
     if (motor->stepsToComplete > motor->accelStep)
     {
@@ -390,6 +390,7 @@ void MoveBySpeed(Motor *motor, double speedRPM)
     uint32_t timerPeriod = CalculateMotorSpeed(motor);
     motor->isMoving = 1;
     motor->stepsToComplete = UINT32_MAX; // Run indefinitely
+    motor->accelStep = motor->stepsToComplete - speedRPM * motor->stepsPerRev / 60 / 20;
 
     if (motor->name == motorY.name)
     {
