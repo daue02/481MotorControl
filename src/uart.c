@@ -2,6 +2,7 @@
 #include "encoder_hal.h"
 #include "utilities.h"
 #include "motor_hal.h"
+#include "drill_hal.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -291,6 +292,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
         tempBuffer[bytesReceived++] = rxBuffer[0];
 
+        // LOG_INFO("Received byte: %d", rxBuffer[0]);
+
         // Single-byte request for encoder data
         if (tempBuffer[0] == 0xAE && bytesReceived == 1)
         {
@@ -323,9 +326,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         else if (tempBuffer[0] == 0x7E && bytesReceived == 1)
         {
             LOG_INFO("LEFT");
-
-            double speed = -motorY.positioningSpeed / motorY.lead * 60;
-            LOG_INFO("speed: %d.%02dV", (int)speed, (int)(speed * 100) % 100);
 
             MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
             bytesReceived = 0;
@@ -362,12 +362,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
         }
+        // Start drill
+        else if (tempBuffer[0] == 0x0F && bytesReceived == 1)
+        {
+            LOG_INFO("DRILL");
+
+            // setDrillPower(50);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
         // Stop
         else if (tempBuffer[0] == 0x07 && bytesReceived == 1)
         {
             LOG_INFO("STOP");
 
             StopMotors();
+            // setDrillPower(0);
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -382,6 +393,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
             bytesReceived = 0;
             rxReady = true;
+
+            LOG_INFO("got it");
         }
 
         HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

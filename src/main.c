@@ -38,6 +38,9 @@ int main(void)
   Motors_Init();
   UART_Init();
 
+  // Unblock the pi if it was waiting
+  motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
+
   LOG_INFO("System Initialized");
   CommandData cmdData;
 
@@ -49,7 +52,9 @@ int main(void)
   {
     if (rxReady)
     {
+      LOG_INFO("Command received");
       int status = receiveMessage(&cmdData);
+      LOG_INFO("Status: %d", status);
       if (status == 0)
       {
         if (!commandPending)
