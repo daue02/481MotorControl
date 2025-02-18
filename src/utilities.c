@@ -82,7 +82,7 @@ float readBatteryVoltage(Battery *bat)
         {
             totalAdcValue += HAL_ADC_GetValue(&hadc1);
         }
-        HAL_Delay(1);
+        // HAL_Delay(1); # This delay locks up when called from an isr, seems to work without
     }
 
     float adcValue = totalAdcValue / (float)numSamples;
