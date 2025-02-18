@@ -52,9 +52,7 @@ int main(void)
   {
     if (rxReady)
     {
-      LOG_INFO("Command received");
       int status = receiveMessage(&cmdData);
-      LOG_INFO("Status: %d", status);
       if (status == 0)
       {
         if (!commandPending)
