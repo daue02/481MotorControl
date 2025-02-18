@@ -38,9 +38,6 @@ int main(void)
   Motors_Init();
   UART_Init();
 
-  // Unblock the pi if it was waiting
-  motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
-
   LOG_INFO("System Initialized");
   CommandData cmdData;
 
