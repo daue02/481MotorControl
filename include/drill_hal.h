@@ -10,6 +10,8 @@ typedef struct
     const char *name;
     GPIO_TypeDef *pwmPort;
     uint16_t pwmPin;
+    GPIO_TypeDef *dirPort;
+    uint16_t dirPin;
     int targetPower;
     int currentPower;
     double accel; // % per sec

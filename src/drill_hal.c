@@ -9,7 +9,8 @@ Drill motorDrill = {
     .name = "motorDrill",
     .pwmPort = GPIOA,
     .pwmPin = GPIO_PIN_5,
-};
+    .dirPort = GPIOC,
+    .dirPin = GPIO_PIN_9};
 
 /**
  * @brief Initializes the timer for drill PWM.
@@ -17,11 +18,20 @@ Drill motorDrill = {
  */
 void Drill_Init(void)
 {
+    // Set PWM parameters
     motorDrill.currentPower = 0;
     motorDrill.targetPower = 0;
     motorDrill.accel = 25; // % per sec
     MX_TIM2_Init();
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
+
+    // Set DIR parameters
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = motorDrill.dirPin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(motorDrill.dirPort, &GPIO_InitStruct);
 }
 
 /**
