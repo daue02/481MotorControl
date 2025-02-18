@@ -38,9 +38,11 @@ void Drill_Init(void)
  * @brief Accelerate/Decelerate the drill to a new power
  *
  * @param power Power expressed as %
+ * @param dir Direction (CW or CCW)
  */
-void setDrillPower(int power)
+void setDrillPower(int power, int dir)
 {
+    // Configure speed
     motorDrill.targetPower = power;
     LOG_INFO("Setting drill to %d%% power", power);
     while (motorDrill.targetPower != motorDrill.currentPower)
@@ -58,6 +60,23 @@ void setDrillPower(int power)
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwmValue);
         HAL_Delay(1 / (motorDrill.accel / 1000));
     }
+
+    // Configure direction
+    if (dir == CW)
+    {
+        HAL_GPIO_WritePin(motorDrill.dirPort, motorDrill.dirPin, 1);
+    }
+    else if (dir == CCW)
+    {
+        HAL_GPIO_WritePin(motorDrill.dirPort, motorDrill.dirPin, 0);
+    }
+    else
+    {
+        LOG_ERROR("Invalid drill direction chosen");
+        ErrorHandler();
+    }
+
+    // Print status
     LOG_INFO("Drill set to %d%% power", power);
 }
 

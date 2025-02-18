@@ -3,6 +3,7 @@
 #define __DRILL_HAL_H
 
 #include "main.h"
+#include "utilities.h"
 #include "stm32f4xx_hal_tim.h"
 
 typedef struct
@@ -20,6 +21,6 @@ typedef struct
 extern Drill motorDrill;
 
 void Drill_Init(void);
-void setDrillPower(int power);
+void setDrillPower(int power, int dir);
 
 #endif

@@ -14,6 +14,10 @@
 #include <string.h>
 #include <stdint.h>
 
+/* Definitions for stepper and drill motor directions*/
+#define CW 0
+#define CCW 1
+
 /* Definition for USARTx clock resources */
 #define USARTx USART2
 #define USARTx_CLK_ENABLE() __HAL_RCC_USART2_CLK_ENABLE();
