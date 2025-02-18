@@ -393,8 +393,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
             bytesReceived = 0;
             rxReady = true;
-
-            LOG_INFO("got it");
         }
 
         HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
