@@ -1,7 +1,41 @@
 #include "controls.h"
+#include "drill_hal.h"
 #include "limit_switch_hal.h"
 #include "motor_hal.h"
 #include "utilities.h"
+
+// Define common intermediate locations
+#define Z_SAFE -25.0
+
+void MoveTo(double y, double z);
+
+/**
+ * @brief Moves the y axis into position over weed, lowers drill to near-ground
+ *
+ * @param y coordinate where weed is located
+ */
+void locateWeed(double y)
+{
+    updateStateMachine("Moving");
+    MoveTo(y, Z_SAFE);
+}
+
+/**
+ * @brief Drill out weed then retract z axis
+ *
+ * @param y coordinate where weed is located
+ * @param drillPower % power (0-100) for drill
+ */
+void removeWeed(double y, int drillPower)
+{
+    updateStateMachine("Drilling");
+    setDrillPower(drillPower);
+    MoveTo(y, motorZ.posMax);
+    setDrillPower(0);
+    updateStateMachine("Moving");
+    MoveTo(y, motorZ.posMin);
+    updateStateMachine("Waiting");
+}
 
 /**
  * @brief Move the robot to the x and y coordinates.

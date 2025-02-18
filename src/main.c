@@ -59,18 +59,8 @@ int main(void)
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
-            updateStateMachine("Moving");
-            MoveTo(currentCommand.position, -25);
-            updateStateMachine("Drilling");
-            setDrillPower(50);
-            MoveTo(currentCommand.position, motorZ.posMax);
-            setDrillPower(0);
-            updateStateMachine("Moving");
-            HAL_Delay(500);
-            MoveTo(currentCommand.position, -25);
-            MoveTo(motorY.posMin, motorZ.posMin);
-            updateStateMachine("Waiting");
-            HAL_Delay(5000);
+            locateWeed(currentCommand.position);
+            removeWeed(currentCommand.position,50);
           }
           else // Manual sequence
           {

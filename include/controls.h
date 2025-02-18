@@ -27,6 +27,8 @@ struct stateMachine
 
 extern struct stateMachine state;
 
+void locateWeed(double y);
+void removeWeed(double y, int drillPower);
 void MoveTo(double y, double z);
 void MoveBy(double rel_y, double rel_z);
 void PrintCartesianCoords(void);
