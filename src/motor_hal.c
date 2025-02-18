@@ -126,7 +126,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Divide by 2, since each interrupt is a toggle
     motor->stepsToCompleteOrig = motor->stepsToComplete;
-    double accelTime = 0.25;                                                                     // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
+    double accelTime = 0.25;                                                                    // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
     double nominalTime = (double)motor->stepsToComplete / motor->stepsPerRev / speedRPM * 60.0; // Time to move at cnst speed
 
     if (accelTime * 2 > nominalTime)
@@ -268,6 +268,14 @@ void TIM4_IRQHandler(void)
  */
 uint32_t CalculateMotorSpeed(Motor *motor)
 {
+    if (state.unhomed)
+    {
+        float timePerStep = 60.0 / (motor->targetRPM * motor->stepsPerRev); // Time per step in seconds
+        uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1; // Time per toggle, in microseconds
+
+        return timerPeriod;
+    }
+
     if (motor->stepsToComplete > motor->accelStep)
     {
         double slope = 1.0 - ((double)(motor->stepsToComplete - motor->accelStep) / (motor->stepsToCompleteOrig - motor->accelStep));
@@ -352,4 +360,45 @@ void HomeMotors(void)
     state.z = motorZ.posMin;
 
     updateStateMachine("Waiting");
+}
+
+/**
+ * @brief Moves the motor at a given speed indefinitely until stopped.
+ *
+ * @param motor Motor to move
+ * @param speedRPM Speed in RPM
+ */
+void MoveBySpeed(Motor *motor, double speedRPM)
+{
+    updateStateMachine("Unhomed");
+
+    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
+
+    if (speedRPM > 0)
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
+        motor->dir = CCW;
+    }
+    else
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
+        motor->dir = CW;
+        speedRPM = -speedRPM; // Ensure speed is positive for calculations
+    }
+
+    motor->targetRPM = speedRPM;
+    uint32_t timerPeriod = CalculateMotorSpeed(motor);
+    motor->isMoving = 1;
+    motor->stepsToComplete = UINT32_MAX; // Run indefinitely
+
+    if (motor->name == motorY.name)
+    {
+        __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim3);
+    }
+    else if (motor->name == motorZ.name)
+    {
+        __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim4);
+    }
 }

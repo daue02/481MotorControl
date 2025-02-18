@@ -1,6 +1,7 @@
 #include "uart.h"
 #include "encoder_hal.h"
 #include "utilities.h"
+#include "motor_hal.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -313,6 +314,62 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             batBuffer[3] = (batBuffer[0] + batBuffer[1] + batBuffer[2]) % 256;
 
             HAL_UART_Transmit_IT(&huart5, batBuffer, BAT_BUF_SIZE);
+
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis negative (left)
+        else if (tempBuffer[0] == 0x7E && bytesReceived == 1)
+        {
+            LOG_INFO("LEFT");
+
+            double speed = -motorY.positioningSpeed / motorY.lead * 60;
+            LOG_INFO("speed: %d.%02dV", (int)speed, (int)(speed * 100) % 100);
+
+            // MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
+            MoveBySpeed(&motorY, -500);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis positive (right)
+        else if (tempBuffer[0] == 0x3F && bytesReceived == 1)
+        {
+            LOG_INFO("RIGHT");
+
+            MoveBySpeed(&motorY, 500);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis negative (down)
+        else if (tempBuffer[0] == 0x9A && bytesReceived == 1)
+        {
+            LOG_INFO("DOWN");
+
+            // MoveBySpeed(&motorZ, -motorZ.positioningSpeed / motorZ.lead * 60);
+            MoveBySpeed(&motorZ, 300);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis positive (up)
+        else if (tempBuffer[0] == 0x5A && bytesReceived == 1)
+        {
+            LOG_INFO("UP");
+
+            MoveBySpeed(&motorZ, -300);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Stop
+        else if (tempBuffer[0] == 0x07 && bytesReceived == 1)
+        {
+            LOG_INFO("STOP");
+
+            StopMotors();
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
