@@ -368,7 +368,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DRILL");
 
-            updateStateMachine("Drilling");
             setDrillPower(50);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -379,10 +378,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("STOP");
 
-            updateStateMachine("Unhomed");
-
             StopMotors();
             setDrillPower(0);
+
+            updateStateMachine("Unhomed");
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

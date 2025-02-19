@@ -362,8 +362,6 @@ void HomeMotors(void)
  */
 void MoveBySpeed(Motor *motor, double speedRPM)
 {
-    updateStateMachine("Positioning");
-
     HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
 
     if (speedRPM > 0)

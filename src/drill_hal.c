@@ -27,33 +27,40 @@ void Drill_Init(void)
 void setDrillPower(int power)
 {
     motorDrill.targetPower = power;
-    LOG_INFO("Setting drill to %d%% power", power);
 
     if (motorDrill.currentPower != motorDrill.targetPower)
     {
+        LOG_INFO("Setting drill to %d%% power", power);
         HAL_TIM_Base_Start_IT(&htim9); // Start acceleration timer
     }
 }
 
 void Drill_TimerCallback(void)
 {
-    if (motorDrill.currentPower == motorDrill.targetPower)
-    {
-        HAL_TIM_Base_Stop_IT(&htim9); // Stop timer when target power is reached
-        return;
-    }
-
     if (motorDrill.targetPower > motorDrill.currentPower)
     {
         motorDrill.currentPower++;
     }
-    else
+    else if (motorDrill.targetPower < motorDrill.currentPower)
     {
         motorDrill.currentPower--;
+    }
+    else // Equal
+    {
+        HAL_TIM_Base_Stop_IT(&htim9); // Stop timer when target power is reached
     }
 
     uint32_t pwmValue = (uint32_t)(((double)htim2.Init.Period / 100.0) * motorDrill.currentPower);
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwmValue);
+}
+
+bool isDrillPWMDisabled(void)
+{
+    if (__HAL_TIM_GET_COMPARE(&htim2, TIM_CHANNEL_1) == 0)
+    {
+        return true;
+    }
+    return false;
 }
 
 void TIM1_BRK_TIM9_IRQHandler(void)
