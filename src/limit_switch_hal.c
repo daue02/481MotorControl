@@ -2,6 +2,7 @@
 #include "motor_hal.h"
 #include "main.h"
 #include "controls.h"
+#include "drill_hal.h"
 
 void EXTI9_5_IRQHandler(void);
 void Switch_Init(InterruptSwitch *interruptSW);
@@ -94,7 +95,7 @@ void Limit_Switch_Init(void)
 void EXTI9_5_IRQHandler(void)
 {
     // Temporary fix to work around false Z triggers when drilling - 2025-02-13 ED
-    if (state.drilling)
+    if (!isDrillPWMDisabled())
     {
         HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin);
         HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);

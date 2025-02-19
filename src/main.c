@@ -43,7 +43,6 @@ int main(void)
 
   updateStateMachine("Unhomed");
   SystemHealthCheck();
-  HomeMotors();
 
   while (1)
   {
@@ -61,6 +60,10 @@ int main(void)
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
+            if (state.unhomed)
+            {
+              HomeMotors();
+            }
             updateStateMachine("Positioning");
             MoveTo(currentCommand.position, -25);
             updateStateMachine("Drilling");

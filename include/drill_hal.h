@@ -19,5 +19,6 @@ extern Drill motorDrill;
 
 void Drill_Init(void);
 void setDrillPower(int power);
+bool isDrillPWMDisabled(void);
 
 #endif
