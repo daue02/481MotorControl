@@ -43,7 +43,6 @@ int main(void)
 
   updateStateMachine("Unhomed");
   SystemHealthCheck();
-  HomeMotors();
 
   while (1)
   {
