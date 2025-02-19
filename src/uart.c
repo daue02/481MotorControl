@@ -3,6 +3,7 @@
 #include "utilities.h"
 #include "motor_hal.h"
 #include "drill_hal.h"
+#include "controls.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -367,6 +368,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DRILL");
 
+            updateStateMachine("Drilling");
             setDrillPower(50);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -376,6 +378,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         else if (tempBuffer[0] == 0x07 && bytesReceived == 1)
         {
             LOG_INFO("STOP");
+
+            updateStateMachine("Unhomed");
 
             StopMotors();
             setDrillPower(0);

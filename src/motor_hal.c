@@ -362,7 +362,7 @@ void HomeMotors(void)
  */
 void MoveBySpeed(Motor *motor, double speedRPM)
 {
-    updateStateMachine("Unhomed");
+    updateStateMachine("Positioning");
 
     HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
 
