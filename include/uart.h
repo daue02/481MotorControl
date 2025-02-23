@@ -3,18 +3,12 @@
 
 #include "main.h"
 
-typedef struct
-{
-    uint8_t axis;
-    uint16_t position;
-} CommandData;
-
 extern volatile bool rxReady;
 extern volatile bool commandPending;
 
 void UART_Init();
-int receiveMessage(CommandData *cmdData);
-void motorOperationCompleteCallback(uint8_t axis, uint16_t position);
+bool receiveCommand(uint16_t *weedPos);
+void motorOperationCompleteCallback(void);
 void sendTicks(int16_t ticks1, int16_t ticks2);
 
 /*
