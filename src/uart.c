@@ -9,8 +9,8 @@
 #define TICK_BUF_SIZE 6
 #define BAT_BUF_SIZE 4
 
-uint8_t COMMAND_BYTE = 0x01;
-uint8_t ACK_BYTE = 0x02;
+uint8_t COMMAND_BYTE = 0x87;
+uint8_t ACK_BYTE = 0x43;
 uint8_t CALLABACK_BYTE = 0x03;
 uint8_t ERROR_BYTE = 0x04;
 uint8_t TICKS_BYTE = 0xAE;
