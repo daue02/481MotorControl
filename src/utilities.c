@@ -144,7 +144,6 @@ void SystemHealthCheck(void)
     {
         LOG_ERROR("Battery Voltage LOW: %d.%02dV (%d%%)", (int)voltage, (int)(voltage * 100) % 100, (int)percent);
         ErrorHandler();
-#battery wire is disconnected
     }
     LOG_INFO("Battery Voltage: %d.%02dV (%d%%)", (int)voltage, (int)(voltage * 100) % 100, (int)percent);
 
