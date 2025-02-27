@@ -157,3 +157,13 @@ void getTicks(int16_t *ticks1, int16_t *ticks2)
     *ticks1 = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
     *ticks2 = (int16_t)__HAL_TIM_GET_COUNTER(&htim8);
 }
+
+void stopTicksTimer(void)
+{
+    HAL_TIM_Base_Stop_IT(&htim10);
+}
+
+void startTicksTimer(void)
+{
+    HAL_TIM_Base_Start_IT(&htim10);
+}

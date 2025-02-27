@@ -176,10 +176,12 @@ void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint
  */
 void motorOperationCompleteCallback(void)
 {
+    stopTicksTimer();
     if (HAL_UART_Transmit_IT(&huart5, &CALLABACK_BYTE, 1) != HAL_OK)
     {
         LOG_ERROR("Failed to send callback to Pi.");
     }
+    startTicksTimer();
 
     commandPending = false;
 

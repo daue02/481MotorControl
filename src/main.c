@@ -55,6 +55,7 @@ int main(void)
 
           if (1) // Automatic sequence
           {
+
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
             if (state.unhomed)
@@ -70,9 +71,8 @@ int main(void)
             updateStateMachine("Positioning");
             HAL_Delay(500);
             MoveTo(weedPos, -25);
-            MoveTo(motorY.posMin, motorZ.posMin);
+            motorOperationCompleteCallback();
             updateStateMachine("Waiting");
-            HAL_Delay(5000);
           }
           else // Manual sequence
           {
@@ -86,16 +86,6 @@ int main(void)
           LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
         }
       }
-    }
-
-    // Wait until motor movement is complete before starting the next command
-    if (commandPending)
-    {
-      if (motorsMoving())
-      {
-        HAL_Delay(1);
-      }
-      motorOperationCompleteCallback();
     }
     HAL_Delay(1);
   }
