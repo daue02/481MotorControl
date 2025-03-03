@@ -254,7 +254,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("LEFT");
 
-            MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
+            MoveBySpeed(&motorY, -motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -264,7 +264,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("RIGHT");
 
-            MoveBySpeed(&motorY, motorY.positioningSpeed / motorY.lead * 60);
+            MoveBySpeed(&motorY, motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -274,7 +274,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DOWN");
 
-            MoveBySpeed(&motorZ, motorZ.positioningSpeed / motorZ.lead * 60);
+            MoveBySpeed(&motorZ, motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -284,7 +284,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("UP");
 
-            MoveBySpeed(&motorZ, -motorZ.positioningSpeed / motorZ.lead * 60);
+            MoveBySpeed(&motorZ, -motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
