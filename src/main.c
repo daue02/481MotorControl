@@ -42,19 +42,16 @@ int main(void)
 
   while (1)
   {
-    double weedPos = 50.0;
-    
+    double weedPos = 150.0;
+
     LOG_INFO("Automatic sequence activated");
     SystemHealthCheck();
     if (state.unhomed)
     {
       HomeMotors();
     }
-    updateStateMachine("Positioning");
-    MoveTo(210,-50);
-    MoveTo(10,-50);
-    // locateWeed(weedPos);
-    // removeWeed(weedPos, 50);
+    locateWeed(weedPos);
+    removeWeed(weedPos, 50);
 
     // if (rxReady)
     // {

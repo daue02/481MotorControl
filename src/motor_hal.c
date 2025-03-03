@@ -41,8 +41,8 @@ Motor motorZ = {
     .dir = CCW,
     .stepsPerRev = 200, // 200PPR
     .lead = 5,
-    .posMin = -93.2, // See 2025-02-11 Electrical OneNote (ED)
-    .posMax = 113.1, // See 2025-02-11 Electrical OneNote (ED)
+    .posMin = -113.1, // See 2025-02-11 Electrical OneNote (ED)
+    .posMax = 93.2,   // See 2025-02-11 Electrical OneNote (ED)
     .isMoving = 0,
 };
 
@@ -108,13 +108,13 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     if (dist > 0)
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
-        motor->dir = CCW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
+        motor->dir = CW;
     }
     else
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
-        motor->dir = CW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
+        motor->dir = CCW;
         dist = dist * -1;
     }
 
@@ -145,7 +145,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     motor->isMoving = 1;
 
     double distToComplete = motor->stepsToComplete / motor->stepsPerRev * motor->lead / 2;
-    if (motor->dir == CW)
+    if (motor->dir == CCW)
     {
         distToComplete = distToComplete * -1;
     }
@@ -321,12 +321,12 @@ void HomeMotors(void)
     // HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, 1);
     // HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, 1);
 
-    // Set positions to max so motor is allowed to move in min direction
-    state.y = motorY.posMax;
-    state.z = motorZ.posMax;
+    // Set positions to min so motor is allowed to move in max direction
+    state.y = motorY.posMin;
+    state.z = motorZ.posMin;
 
     // Move full left/up until LS contact
-    MoveTo(motorY.posMin, motorZ.posMin);
+    MoveTo(motorY.posMax, motorZ.posMax);
     while (motorsMoving())
     {
         HAL_Delay(1);
@@ -334,18 +334,18 @@ void HomeMotors(void)
     HAL_Delay(1000);
 
     // Move right/down by 5mm
-    MoveBy(5, 5);
+    MoveBy(-5, -5);
     while (motorsMoving())
     {
         HAL_Delay(1);
     }
 
     // Update min position to avoid limit switch contact
-    motorY.posMin += 6.21; // As measured for 5mm command 12-FEB-2025 ED
-    motorZ.posMin += 7.21; // As measured for 5mm command 12-FEB-2025 ED
+    motorY.posMax -= 6.21; // As measured for 5mm command 12-FEB-2025 ED
+    motorZ.posMax -= 7.21; // As measured for 5mm command 12-FEB-2025 ED
 
-    state.y = motorY.posMin;
-    state.z = motorZ.posMin;
+    state.y = motorY.posMax;
+    state.z = motorZ.posMax;
 
     updateStateMachine("Waiting");
 }
