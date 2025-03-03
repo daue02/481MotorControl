@@ -5,5 +5,6 @@
 
 void Encoder_Init(void);
 void getTicks(int16_t *ticks1, int16_t *ticks2);
-
+void stopTicksTimer(void);
+void startTicksTimer(void);
 #endif

@@ -65,14 +65,14 @@ bool isDrillPWMDisabled(void)
 
 void TIM1_BRK_TIM9_IRQHandler(void)
 {
-    HAL_TIM_IRQHandler(&htim9);
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM9)
+    if (__HAL_TIM_GET_FLAG(&htim9, TIM_FLAG_UPDATE) != RESET)
     {
-        Drill_TimerCallback();
+        if (__HAL_TIM_GET_IT_SOURCE(&htim9, TIM_IT_UPDATE) != RESET)
+        {
+            __HAL_TIM_CLEAR_IT(&htim9, TIM_IT_UPDATE);
+
+            Drill_TimerCallback();
+        }
     }
 }
 

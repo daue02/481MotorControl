@@ -13,7 +13,6 @@
 UART_HandleTypeDef UartHandle;
 
 struct stateMachine state = {0};
-CommandData currentCommand;
 
 static void SystemClockConfig(void);
 void Serial_Init(void);
@@ -39,7 +38,6 @@ int main(void)
   UART_Init();
 
   LOG_INFO("System Initialized");
-  CommandData cmdData;
 
   updateStateMachine("Unhomed");
   SystemHealthCheck();
@@ -48,16 +46,16 @@ int main(void)
   {
     if (rxReady)
     {
-      int status = receiveMessage(&cmdData);
-      if (status == 0)
+      uint16_t weedPos;
+      if (receiveCommand(&weedPos))
       {
         if (!commandPending)
         {
-          currentCommand = cmdData;
           commandPending = true;
 
           if (1) // Automatic sequence
           {
+
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
             if (state.unhomed)
@@ -65,17 +63,16 @@ int main(void)
               HomeMotors();
             }
             updateStateMachine("Positioning");
-            MoveTo(currentCommand.position, -25);
+            MoveTo(weedPos, -25);
             updateStateMachine("Drilling");
             setDrillPower(50);
-            MoveTo(currentCommand.position, motorZ.posMax);
+            MoveTo(weedPos, motorZ.posMax);
             setDrillPower(0);
             updateStateMachine("Positioning");
             HAL_Delay(500);
-            MoveTo(currentCommand.position, -25);
-            MoveTo(motorY.posMin, motorZ.posMin);
+            MoveTo(weedPos, -25);
+            motorOperationCompleteCallback();
             updateStateMachine("Waiting");
-            HAL_Delay(5000);
           }
           else // Manual sequence
           {
@@ -89,16 +86,6 @@ int main(void)
           LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
         }
       }
-    }
-
-    // Wait until motor movement is complete before starting the next command
-    if (commandPending)
-    {
-      if (motorsMoving())
-      {
-        HAL_Delay(1);
-      }
-      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
     HAL_Delay(1);
   }
