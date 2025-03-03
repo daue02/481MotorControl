@@ -42,30 +42,44 @@ int main(void)
 
   while (1)
   {
-    if (rxReady)
+    double weedPos = 50.0;
+    
+    LOG_INFO("Automatic sequence activated");
+    SystemHealthCheck();
+    if (state.unhomed)
     {
-      uint16_t weedPos;
-      if (receiveCommand(&weedPos))
-      {
-        if (!commandPending)
-        {
-          commandPending = true;
-          LOG_INFO("Automatic sequence activated");
-          SystemHealthCheck();
-          if (state.unhomed)
-          {
-            HomeMotors();
-          }
-          locateWeed(weedPos);
-          removeWeed(weedPos, 50);
-        }
-        else
-        {
-          // Handle case where a command is received while another is pending
-          LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
-        }
-      }
+      HomeMotors();
     }
+    updateStateMachine("Positioning");
+    MoveTo(210,-50);
+    MoveTo(10,-50);
+    // locateWeed(weedPos);
+    // removeWeed(weedPos, 50);
+
+    // if (rxReady)
+    // {
+    //   uint16_t weedPos;
+    //   if (receiveCommand(&weedPos))
+    //   {
+    //     if (!commandPending)
+    //     {
+    //       commandPending = true;
+    //       LOG_INFO("Automatic sequence activated");
+    //       SystemHealthCheck();
+    //       if (state.unhomed)
+    //       {
+    //         HomeMotors();
+    //       }
+    //       locateWeed(weedPos);
+    //       removeWeed(weedPos, 50);
+    //     }
+    //     else
+    //     {
+    //       // Handle case where a command is received while another is pending
+    //       LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
+    //     }
+    //   }
+    // }
     HAL_Delay(1);
   }
 }

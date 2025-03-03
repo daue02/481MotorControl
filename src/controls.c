@@ -18,7 +18,7 @@ void checkMoveIsValid(double y, double z);
  */
 void locateWeed(double y)
 {
-    updateStateMachine("Moving");
+    updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
 }
 
@@ -34,7 +34,7 @@ void removeWeed(double y, int drillPower)
     setDrillPower(drillPower);
     MoveTo(y, motorZ.posMax);
     setDrillPower(0);
-    updateStateMachine("Moving");
+    updateStateMachine("Positioning");
     MoveTo(y, motorZ.posMin);
     motorOperationCompleteCallback();
     updateStateMachine("Waiting");
@@ -106,7 +106,7 @@ void checkMoveIsValid(double y, double z)
     {
         LOG_ERROR("Z movement exceeds minimum range");
     }
-    else if (y != state.y && z > Z_SAFE)
+    else if ((y - state.y)>1 && z > Z_SAFE)
     {
         LOG_ERROR("Y cannot be moved when Z is near or below ground");
     }
@@ -148,42 +148,56 @@ void updateStateMachine(const char *toState)
         motorY.speed = 0; // Motion not permitted when faulted
         motorZ.speed = 0; // Motion not permitted when faulted
         changeLEDState(redLED, "Slow");
+
+        state = (struct stateMachine){.faulted = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Unhomed") == 0)
     {
         motorY.speed = 0; // Motion not permitted when unhomed
         motorZ.speed = 0; // Motion not permitted when unhomed
         changeLEDState(redLED, "Solid");
+
+        state = (struct stateMachine){.unhomed = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Homing") == 0)
     {
         motorY.speed = 35;
         motorZ.speed = 35;
         changeLEDState(redLED, "Fast");
+
+        state = (struct stateMachine){.homing = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Waiting") == 0)
     {
         motorY.speed = 0;
         motorZ.speed = 0;
         changeLEDState(greenLED, "Solid");
+
+        state = (struct stateMachine){.waiting = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Positioning") == 0)
     {
         motorY.speed = 100;
         motorZ.speed = 100;
         changeLEDState(greenLED, "Slow");
+
+        state = (struct stateMachine){.positioning = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Manual") == 0)
     {
         motorY.speed = 100;
         motorZ.speed = 100;
         changeLEDState(greenLED, "Strobe");
+
+        state = (struct stateMachine){.manual = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Drilling") == 0)
     {
         motorY.speed = 0; // Y motion not allowed when below ground
         motorZ.speed = 10;
         changeLEDState(greenLED, "Fast");
+
+        state = (struct stateMachine){.drilling = true, .y = state.y, .z = state.z};
     }
     else
     {
