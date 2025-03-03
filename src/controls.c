@@ -2,6 +2,7 @@
 #include "drill_hal.h"
 #include "limit_switch_hal.h"
 #include "motor_hal.h"
+#include "uart.h"
 #include "utilities.h"
 
 // Define common intermediate locations
@@ -35,6 +36,7 @@ void removeWeed(double y, int drillPower)
     setDrillPower(0);
     updateStateMachine("Moving");
     MoveTo(y, motorZ.posMin);
+    motorOperationCompleteCallback();
     updateStateMachine("Waiting");
 }
 
