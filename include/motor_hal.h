@@ -48,5 +48,6 @@ double MoveByDist(Motor *motor, double dist, double speedRPM);
 void StopMotors(void);
 bool motorsMoving(void);
 void HomeMotors(void);
+void MoveBySpeed(Motor *motor, double speedRPM);
 
 #endif

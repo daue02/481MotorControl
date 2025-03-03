@@ -1,6 +1,9 @@
 #include "uart.h"
 #include "encoder_hal.h"
 #include "utilities.h"
+#include "motor_hal.h"
+#include "drill_hal.h"
+#include "controls.h"
 
 #define RX_BUFFER_SIZE 5
 #define TX_BUFFER_SIZE 5
@@ -290,6 +293,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
         tempBuffer[bytesReceived++] = rxBuffer[0];
 
+        // LOG_INFO("Received byte: %d", rxBuffer[0]);
+
         // Single-byte request for encoder data
         if (tempBuffer[0] == 0xAE && bytesReceived == 1)
         {
@@ -313,6 +318,70 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             batBuffer[3] = (batBuffer[0] + batBuffer[1] + batBuffer[2]) % 256;
 
             HAL_UART_Transmit_IT(&huart5, batBuffer, BAT_BUF_SIZE);
+
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis negative (left)
+        else if (tempBuffer[0] == 0x7E && bytesReceived == 1)
+        {
+            LOG_INFO("LEFT");
+
+            MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis positive (right)
+        else if (tempBuffer[0] == 0x3F && bytesReceived == 1)
+        {
+            LOG_INFO("RIGHT");
+
+            MoveBySpeed(&motorY, motorY.positioningSpeed / motorY.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis negative (down)
+        else if (tempBuffer[0] == 0x9A && bytesReceived == 1)
+        {
+            LOG_INFO("DOWN");
+
+            MoveBySpeed(&motorZ, motorZ.positioningSpeed / motorZ.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis positive (up)
+        else if (tempBuffer[0] == 0x5A && bytesReceived == 1)
+        {
+            LOG_INFO("UP");
+
+            MoveBySpeed(&motorZ, -motorZ.positioningSpeed / motorZ.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Start drill
+        else if (tempBuffer[0] == 0x0F && bytesReceived == 1)
+        {
+            LOG_INFO("DRILL");
+
+            setDrillPower(50);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Stop
+        else if (tempBuffer[0] == 0x07 && bytesReceived == 1)
+        {
+            LOG_INFO("STOP");
+
+            StopMotors();
+            setDrillPower(0);
+
+            updateStateMachine("Unhomed");
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
