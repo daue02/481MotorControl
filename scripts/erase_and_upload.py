@@ -2,7 +2,7 @@
 # getting jammed up after multiple uploads. It automatically 
 # erases the Nucleo before flashing each time
 
-Import("env")
+Import("env") # type: ignore
 import subprocess
 import time
 

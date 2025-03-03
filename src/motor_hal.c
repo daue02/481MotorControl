@@ -287,6 +287,8 @@ void StopMotors(void)
 {
     HAL_TIM_Base_Stop_IT(&htim3);
     HAL_TIM_Base_Stop_IT(&htim4);
+    HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, 0); // For moveBySpeed. Occurs in stepMotor when using moveBySpeed
+    HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, 0); // For moveBySpeed. Occurs in stepMotor when using moveBySpeed
 }
 
 /**

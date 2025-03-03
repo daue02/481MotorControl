@@ -306,7 +306,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
             StopMotors();
             setDrillPower(0);
-
             updateStateMachine("Unhomed");
 
             bytesReceived = 0;
