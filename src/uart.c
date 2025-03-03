@@ -1,25 +1,37 @@
 #include "uart.h"
 #include "encoder_hal.h"
 #include "utilities.h"
+#include "motor_hal.h"
+#include "drill_hal.h"
+#include "controls.h"
 
-#define RX_BUFFER_SIZE 5
-#define TX_BUFFER_SIZE 5
+#define RX_BUFFER_SIZE 4
 #define TICK_BUF_SIZE 6
 #define BAT_BUF_SIZE 4
+
+uint8_t COMMAND_BYTE = 0x87;
+uint8_t ACK_BYTE = 0x43;
+uint8_t CALLABACK_BYTE = 0x03;
+uint8_t ERROR_BYTE = 0x04;
+uint8_t TICKS_BYTE = 0xAE;
+uint8_t BATTERY_BYTE = 0x11;
+uint8_t LEFT_BYTE = 0x7E;
+uint8_t RIGHT_BYTE = 0x3F;
+uint8_t DOWN_BYTE = 0x9A;
+uint8_t UP_BYTE = 0x5A;
+uint8_t DRILL_BYTE = 0x0F;
+uint8_t STOP_BYTE = 0x07;
 
 UART_HandleTypeDef huart5;
 
 void UART5_IRQHandler(void);
-void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position);
 void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint8_t *txData);
-bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t *position);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 
 volatile bool rxReady = false;
 volatile bool commandPending = false;
 uint8_t rxBuffer[RX_BUFFER_SIZE];
-uint8_t txBuffer[TX_BUFFER_SIZE];
 uint8_t ticksBuffer[TICK_BUF_SIZE];
 uint8_t batBuffer[BAT_BUF_SIZE];
 
@@ -72,85 +84,33 @@ void UART_Init()
  * @param cmdData Pointer to a CommandData structure where the received command data will be stored.
  * @return 0 if a valid command was received and processed; -1 otherwise.
  */
-int receiveMessage(CommandData *cmdData)
+bool receiveCommand(uint16_t *weedPos)
 {
-    rxReady = false;
+    rxReady = false; // Reset flag
 
-    uint8_t messageType;
-    uint8_t axis;
-    uint16_t position;
-    int returnCode = -1;
-
-    bool valid = parseMessage(rxBuffer, &messageType, &axis, &position);
-
-    if (valid)
+    uint8_t receivedChecksum = rxBuffer[RX_BUFFER_SIZE - 1];
+    uint8_t calculatedChecksum = 0;
+    for (int i = 0; i < RX_BUFFER_SIZE - 1; i++)
     {
-        if (messageType == 0x01) // Command message from Raspberry Pi
-        {
-            LOG_INFO("Received Command: Axis %d, Position %d", axis, position);
-
-            // Send acknowledgment back
-            constructMessage(0x03, axis, position, txBuffer); // Message Type 0x03 for ACK
-            HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-
-            // Store received command data
-            cmdData->axis = axis;
-            cmdData->position = position;
-
-            returnCode = 0; // Indicate success
-        }
-        else if (messageType == 0x03 || messageType == 0x04)
-        {
-            // Received ACK or Error; ignore or handle as needed
-            LOG_INFO("Received Message Type %d, ignoring.", messageType);
-        }
-        else if (messageType == 0x02) // Data message (unlikely in this context)
-        {
-            // Process data message as needed
-            LOG_INFO("Received Data: Axis %d, Position %d", axis, position);
-
-            // Send acknowledgment back
-            constructMessage(0x03, axis, position, txBuffer); // ACK
-            HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-        }
-        else
-        {
-            LOG_WARN("Unknown message type received: %d", messageType);
-            // Send an error message back
-            constructMessage(0x04, 0, 0, txBuffer); // Error message
-            HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-        }
+        calculatedChecksum += rxBuffer[i];
     }
-    else
+    calculatedChecksum = calculatedChecksum % 256;
+
+    if (receivedChecksum != calculatedChecksum)
     {
-        LOG_ERROR("Checksum failed");
-        // Send error message back
-        constructMessage(0x04, 0, 0, txBuffer); // Error message
-        HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
+        return false;
     }
 
-    // Restart UART reception
-    HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFFER_SIZE);
+    uint16_t position = ((uint16_t)rxBuffer[1] << 8) | rxBuffer[2];
+    *weedPos = position;
 
-    return returnCode;
-}
+    if (HAL_UART_Transmit_IT(&huart5, &ACK_BYTE, 1) != HAL_OK)
+    {
+        LOG_ERROR("Failed to send ACK.");
+        return false;
+    }
 
-/**
- * @brief Sends a message over the UART interface.
- *
- * This function constructs a message with the specified parameters and transmits it using
- * the UART interface. It is used to send acknowledgments, data messages, or error messages
- * back to the Raspberry Pi.
- *
- * @param messageType The type of the message to send (e.g., command, data, acknowledgment, error).
- * @param axis The axis identifier associated with the message.
- * @param position The position value associated with the message.
- */
-void sendMessage(uint8_t messageType, uint8_t axis, uint16_t position)
-{
-    constructMessage(messageType, axis, position, txBuffer);
-    HAL_UART_Transmit_IT(&huart5, txBuffer, TX_BUFFER_SIZE);
-    LOG_INFO("Sent Message: Type %d, Axis %d, Position %d", messageType, axis, position);
+    return true;
 }
 
 /**
@@ -209,52 +169,23 @@ void constructMessage(uint8_t messageType, uint8_t axis, uint16_t position, uint
 }
 
 /**
- * @brief Parses a received message and verifies its checksum.
- *
- * This function extracts the message type, axis, and position from the received message buffer.
- * It verifies the checksum to ensure that the message has not been corrupted during transmission.
- *
- * @param buffer Pointer to the buffer containing the received message.
- * @param messageType Pointer to a variable where the message type will be stored.
- * @param axis Pointer to a variable where the axis identifier will be stored.
- * @param position Pointer to a variable where the position value will be stored.
- * @return true if the message is valid and the checksum matches; false otherwise.
- */
-bool parseMessage(uint8_t *rxData, uint8_t *messageType, uint8_t *axis, uint16_t *position)
-{
-    uint8_t receivedChecksum = rxData[4];
-    uint8_t calculatedChecksum = (rxData[0] + rxData[1] + rxData[2] + rxData[3]) % 256;
-
-    if (receivedChecksum != calculatedChecksum)
-    {
-        // Checksum error
-        return false;
-    }
-
-    *messageType = rxData[0];
-    *axis = rxData[1];
-    *position = ((uint16_t)rxData[2] << 8) | rxData[3];
-
-    return true;
-}
-
-/**
  * @brief Callback function invoked when the motor operation is complete.
  *
  * This function is called by the motor module (or simulated via a timer interrupt) when the motor operation
  * has finished. It sends a completion message back to the Raspberry Pi and updates the system state.
- *
- * @param axis The axis identifier for which the motor operation was performed.
- * @param position The position value to which the motor moved.
  */
-void motorOperationCompleteCallback(uint8_t axis, uint16_t position)
+void motorOperationCompleteCallback(void)
 {
-    // Send a message back to the Pi to indicate completion
-    sendMessage(0x02, axis, position); // Message Type 0x02 for Data
+    stopTicksTimer();
+    if (HAL_UART_Transmit_IT(&huart5, &CALLABACK_BYTE, 1) != HAL_OK)
+    {
+        LOG_ERROR("Failed to send callback to Pi.");
+    }
+    startTicksTimer();
 
     commandPending = false;
 
-    LOG_INFO("Motor operation complete: Axis %d, Position %d", axis, position);
+    LOG_INFO("Removal operation complete");
 }
 
 /**
@@ -291,7 +222,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         tempBuffer[bytesReceived++] = rxBuffer[0];
 
         // Single-byte request for encoder data
-        if (tempBuffer[0] == 0xAE && bytesReceived == 1)
+        if (tempBuffer[0] == TICKS_BYTE && bytesReceived == 1)
         {
             int16_t ticks1, ticks2;
             getTicks(&ticks1, &ticks2);
@@ -304,7 +235,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             return;
         }
         // Battery voltage request
-        else if (tempBuffer[0] == 0x11 && bytesReceived == 1)
+        else if (tempBuffer[0] == BATTERY_BYTE && bytesReceived == 1)
         {
             float voltage = readBatteryVoltage(&bat);
             batBuffer[0] = 0x11;
@@ -313,6 +244,70 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             batBuffer[3] = (batBuffer[0] + batBuffer[1] + batBuffer[2]) % 256;
 
             HAL_UART_Transmit_IT(&huart5, batBuffer, BAT_BUF_SIZE);
+
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis negative (left)
+        else if (tempBuffer[0] == LEFT_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("LEFT");
+
+            MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move y-axis positive (right)
+        else if (tempBuffer[0] == RIGHT_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("RIGHT");
+
+            MoveBySpeed(&motorY, motorY.positioningSpeed / motorY.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis negative (down)
+        else if (tempBuffer[0] == DOWN_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("DOWN");
+
+            MoveBySpeed(&motorZ, motorZ.positioningSpeed / motorZ.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Move z-axis positive (up)
+        else if (tempBuffer[0] == UP_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("UP");
+
+            MoveBySpeed(&motorZ, -motorZ.positioningSpeed / motorZ.lead * 60);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Start drill
+        else if (tempBuffer[0] == DRILL_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("DRILL");
+
+            setDrillPower(50);
+            bytesReceived = 0;
+            HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
+            return;
+        }
+        // Stop
+        else if (tempBuffer[0] == STOP_BYTE && bytesReceived == 1)
+        {
+            LOG_INFO("STOP");
+
+            StopMotors();
+            setDrillPower(0);
+
+            updateStateMachine("Unhomed");
 
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

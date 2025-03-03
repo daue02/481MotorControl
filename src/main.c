@@ -12,7 +12,6 @@
 UART_HandleTypeDef UartHandle;
 
 struct stateMachine state = {0};
-CommandData currentCommand;
 
 static void SystemClockConfig(void);
 void Serial_Init(void);
@@ -37,30 +36,33 @@ int main(void)
   Utilities_Init();
 
   LOG_INFO("System Initialized");
-  CommandData cmdData;
 
   updateStateMachine("Unhomed");
   SystemHealthCheck();
-  HomeMotors();
 
   while (1)
   {
     if (rxReady)
     {
-      int status = receiveMessage(&cmdData);
-      if (status == 0)
+      uint16_t weedPos;
+      if (receiveCommand(&weedPos))
       {
         if (!commandPending)
         {
-          currentCommand = cmdData;
           commandPending = true;
 
           if (1) // Automatic sequence
           {
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
-            locateWeed(currentCommand.position);
-            removeWeed(currentCommand.position,50);
+            if (state.unhomed)
+            {
+              HomeMotors();
+            }
+            locateWeed(weedPos);
+            removeWeed(weedPos,50);
+            motorOperationCompleteCallback();
+            updateStateMachine("Waiting");
           }
           else // Manual sequence
           {
@@ -74,16 +76,6 @@ int main(void)
           LOG_WARN("Command received while another is in progress. Ignoring or queueing.");
         }
       }
-    }
-
-    // Wait until motor movement is complete before starting the next command
-    if (commandPending)
-    {
-      if (motorsMoving())
-      {
-        HAL_Delay(1);
-      }
-      motorOperationCompleteCallback(currentCommand.axis, currentCommand.position);
     }
     HAL_Delay(1);
   }

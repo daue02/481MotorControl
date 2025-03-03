@@ -347,3 +347,43 @@ void HomeMotors(void)
 
     updateStateMachine("Waiting");
 }
+
+/**
+ * @brief Moves the motor at a given speed indefinitely until stopped.
+ *
+ * @param motor Motor to move
+ * @param speedRPM Speed in RPM
+ */
+void MoveBySpeed(Motor *motor, double speedRPM)
+{
+    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
+
+    if (speedRPM > 0)
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
+        motor->dir = CCW;
+    }
+    else
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
+        motor->dir = CW;
+        speedRPM = -speedRPM; // Ensure speed is positive for calculations
+    }
+
+    motor->targetRPM = speedRPM;
+    uint32_t timerPeriod = CalculateMotorSpeed(motor);
+    motor->isMoving = 1;
+    motor->stepsToComplete = UINT32_MAX; // Run indefinitely
+    motor->accelStep = motor->stepsToComplete - speedRPM * motor->stepsPerRev / 60 / 20;
+
+    if (motor->name == motorY.name)
+    {
+        __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim3);
+    }
+    else if (motor->name == motorZ.name)
+    {
+        __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim4);
+    }
+}

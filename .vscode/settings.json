@@ -15,6 +15,7 @@
         "stm32f4xx_hal.h": "c",
         "drill_hal.h": "c",
         "uart.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "encoder_hal.h": "c"
     }
 }
