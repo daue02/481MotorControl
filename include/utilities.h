@@ -3,6 +3,7 @@
 #define __UTILITIES_H
 
 #include "main.h"
+#include <string.h>
 
 typedef struct
 {
@@ -16,11 +17,27 @@ typedef struct
     float V_MIN;
 } Battery;
 
-extern Battery bat;
+typedef struct
+{
+    const char *name;
+    GPIO_TypeDef *port;
+    uint16_t pin;
+    GPIO_PinState pin_state;
+    uint32_t mode;
+    uint32_t pull;
+    uint32_t speed;
+    bool latched;
+} LED;
 
-void Battery_Health_Init(void);
+extern Battery bat;
+extern LED greenLED;
+extern LED redLED;
+extern LED activeLED;
+
+void Utilities_Init(void);
 float readBatteryVoltage(Battery *bat);
 void SystemHealthCheck(void);
 void ErrorHandler(void);
+void changeLEDState(LED butLED, const char *ledMode);
 
 #endif

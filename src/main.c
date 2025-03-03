@@ -3,7 +3,6 @@
 #include "controls.h"
 #include "drill_hal.h"
 #include "encoder_hal.h"
-#include "hmi_hal.h"
 #include "limit_switch_hal.h"
 #include "motor_hal.h"
 #include "uart.h"
@@ -29,13 +28,12 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
-  Battery_Health_Init();
   Drill_Init();
   Encoder_Init();
-  HMI_Init();
   Limit_Switch_Init();
   Motors_Init();
   UART_Init();
+  Utilities_Init();
 
   LOG_INFO("System Initialized");
 
@@ -55,22 +53,14 @@ int main(void)
 
           if (1) // Automatic sequence
           {
-
             LOG_INFO("Automatic sequence activated");
             SystemHealthCheck();
             if (state.unhomed)
             {
               HomeMotors();
             }
-            updateStateMachine("Positioning");
-            MoveTo(weedPos, -25);
-            updateStateMachine("Drilling");
-            setDrillPower(50);
-            MoveTo(weedPos, motorZ.posMax);
-            setDrillPower(0);
-            updateStateMachine("Positioning");
-            HAL_Delay(500);
-            MoveTo(weedPos, -25);
+            locateWeed(weedPos);
+            removeWeed(weedPos,50);
             motorOperationCompleteCallback();
             updateStateMachine("Waiting");
           }

@@ -25,9 +25,7 @@ typedef struct
     double lead;                  // Leadscrew lead [mm/rev]
     double posMax;                // Positive limit switch position
     double posMin;                // Negative limit switch position
-    double drillingSpeed;         // Steady-state speed [mm/s] when drilling
-    double homingSpeed;           // Steady-state speed [mm/s] when homing
-    double positioningSpeed;      // Steady-state speed [mm/s] when positioning
+    double speed;                 // Steady-state speed [mm/s]
     uint32_t stepsToComplete;     // Number of steps the motor has left to complete
     uint32_t stepsToCompleteOrig; // Number of steps the motor originally had to complete
     uint32_t accelStep;           // stepsToComplete when motor finishes accelerating

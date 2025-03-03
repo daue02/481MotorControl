@@ -4,8 +4,11 @@
 #include "utilities.h"
 
 ADC_HandleTypeDef hadc1;
+TIM_HandleTypeDef htim5;
 
 void ErrorHandler(void);
+static void TIM5_Init(void);
+void TIM5_IRQHandler(void);
 
 Battery bat =
     {
@@ -17,6 +20,34 @@ Battery bat =
         .R2 = 38100.0,  // 3x 100K parallel + 5.1k series, measured with multimeter
         .V_REF = 3.3,
         .V_MIN = 32.0, // Min safe range is 30-32V. Absolute minimum is 25V
+};
+
+LED greenLED =
+    {
+        .name = "greenLED",
+        .port = GPIOA,
+        .pin = GPIO_PIN_1,
+        .mode = GPIO_MODE_OUTPUT_PP,
+        .pull = GPIO_NOPULL,
+        .speed = GPIO_SPEED_FREQ_LOW,
+};
+
+LED redLED =
+    {
+        .name = "redLED",
+        .port = GPIOC,
+        .pin = GPIO_PIN_0,
+        .mode = GPIO_MODE_OUTPUT_PP,
+        .pull = GPIO_NOPULL,
+        .speed = GPIO_SPEED_FREQ_LOW,
+};
+
+// For tim5 interrupt
+LED activeLED =
+    {
+        .mode = GPIO_MODE_OUTPUT_PP,
+        .pull = GPIO_NOPULL,
+        .speed = GPIO_SPEED_FREQ_LOW,
 };
 
 /**
@@ -61,6 +92,37 @@ void Battery_Health_Init(void)
         LOG_ERROR("Battery ADC init failed");
         ErrorHandler();
     }
+}
+
+/**
+ * @brief Initializes the pins and state of a single LED
+ *
+ * @param led LED object
+ */
+void LED_Init(LED *led)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = led->pin;
+    GPIO_InitStruct.Mode = led->mode;
+    GPIO_InitStruct.Pull = led->pull;
+    GPIO_InitStruct.Speed = led->speed;
+    HAL_GPIO_Init(led->port, &GPIO_InitStruct);
+
+    led->pin_state = HAL_GPIO_ReadPin(led->port, led->pin);
+}
+
+/**
+ * @brief Initializes the LEDs and battery, to be called in main
+ *
+ */
+void Utilities_Init(void)
+{
+    TIM5_Init();
+
+    Battery_Health_Init();
+    LED_Init(&greenLED);
+    LED_Init(&redLED);
 }
 
 /**
@@ -180,5 +242,83 @@ void ErrorHandler(void)
     updateStateMachine("Faulted");
     while (1)
     {
+    }
+}
+
+/**
+ * @brief Changes overall LED state
+ *
+ * @param led LED object
+ * @param ledMode Slow, Fast, Solid
+ */
+void changeLEDState(LED led, const char *ledMode)
+{
+    // Shut off the other LED
+    if (strcmp(led.name,"greenLED") == 0)
+    {
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(redLED.port, redLED.pin, GPIO_PIN_RESET);        
+    }
+    else
+    {
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(greenLED.port, greenLED.pin, GPIO_PIN_RESET);  
+    }
+
+    // Set this LED to slow, fast, or solid
+    if (strcmp(ledMode, "Slow") == 0 || strcmp(ledMode, "Fast") == 0)
+    {
+        double flashSpeed = 0;
+        if (strcmp(ledMode, "Slow") == 0)
+        {
+            flashSpeed = 0.5; // Slow interval [s]
+        }
+        else
+        {
+            flashSpeed = 0.1; // Fast interval [s]
+        }
+        double timerPeriod = 1000000 * flashSpeed; // 1MHz clock * Speed
+        activeLED.port = led.port;
+        activeLED.pin = led.pin;
+        __HAL_TIM_SetCounter(&htim5, 0);
+        __HAL_TIM_SET_AUTORELOAD(&htim5, timerPeriod);
+        HAL_TIM_Base_Start_IT(&htim5);
+    }
+    else if (strcmp(ledMode, "Solid") == 0)
+    {
+        HAL_TIM_Base_Stop_IT(&htim5);
+        HAL_GPIO_WritePin(led.port, led.pin, GPIO_PIN_SET);
+    }
+    else
+    {
+        LOG_ERROR("Invalid LED type commanded");
+        ErrorHandler();
+    }
+}
+
+static void TIM5_Init(void)
+{
+    __HAL_RCC_TIM5_CLK_ENABLE();
+
+    htim5.Instance = TIM5;
+    htim5.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1); // 1 MHz clock
+    htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim5.Init.Period = 0xFFFF; // 0.5s / inv(1MHz)
+    htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    HAL_TIM_Base_Init(&htim5);
+
+    HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM5_IRQn);
+}
+
+void TIM5_IRQHandler(void)
+{
+    if (__HAL_TIM_GET_FLAG(&htim5, TIM_FLAG_UPDATE) != RESET)
+    {
+        if (__HAL_TIM_GET_IT_SOURCE(&htim5, TIM_IT_UPDATE) != RESET)
+        {
+            __HAL_TIM_CLEAR_IT(&htim5, TIM_IT_UPDATE);
+            HAL_GPIO_TogglePin(activeLED.port, activeLED.pin);
+        }
     }
 }
