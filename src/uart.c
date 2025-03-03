@@ -254,6 +254,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("LEFT");
 
+            updateStateMachine("Manual");
             MoveBySpeed(&motorY, -motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -264,6 +265,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("RIGHT");
 
+            updateStateMachine("Manual");
             MoveBySpeed(&motorY, motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -274,6 +276,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DOWN");
 
+            updateStateMachine("Manual");
             MoveBySpeed(&motorZ, motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -284,6 +287,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("UP");
 
+            updateStateMachine("Manual");
             MoveBySpeed(&motorZ, -motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
@@ -294,6 +298,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DRILL");
 
+            updateStateMachine("Manual");
             setDrillPower(50);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);

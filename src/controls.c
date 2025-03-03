@@ -161,20 +161,31 @@ void updateStateMachine(const char *toState)
     }
     else if (strcmp(toState, "Waiting") == 0)
     {
-        motorY.speed = 0; // Motion not permitted when waiting
-        motorZ.speed = 0; // Motion not permitted when waiting
+        motorY.speed = 0;
+        motorZ.speed = 0;
         changeLEDState(greenLED, "Solid");
     }
-    else if (strcmp(toState, "Moving") == 0)
+    else if (strcmp(toState, "Positioning") == 0)
     {
         motorY.speed = 100;
         motorZ.speed = 100;
         changeLEDState(greenLED, "Slow");
+    }
+    else if (strcmp(toState, "Manual") == 0)
+    {
+        motorY.speed = 100;
+        motorZ.speed = 100;
+        changeLEDState(greenLED, "Strobe");
     }
     else if (strcmp(toState, "Drilling") == 0)
     {
         motorY.speed = 0; // Y motion not allowed when below ground
         motorZ.speed = 10;
         changeLEDState(greenLED, "Fast");
+    }
+    else
+    {
+        LOG_ERROR("Invalid State Commanded");
+        ErrorHandler();
     }
 }
