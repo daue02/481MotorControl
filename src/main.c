@@ -21,6 +21,19 @@ void SerialDemo(void);
 
 int main(void)
 {
+  // Wait for Pi to fully boot before proceeding
+  while (1)
+  {
+    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
+    {
+      HAL_Delay(1);
+    }
+    else
+    {
+      break;
+    }
+  }
+
   HAL_Init();
   SystemClockConfig();
   __HAL_RCC_GPIOA_CLK_ENABLE();
