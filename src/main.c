@@ -51,7 +51,7 @@ int main(void)
       HomeMotors();
     }
     locateWeed(weedPos);
-    removeWeed(weedPos, 50);
+    removeWeed(weedPos, 5);
 
     // if (rxReady)
     // {

@@ -31,12 +31,12 @@ void locateWeed(double y)
 void removeWeed(double y, int drillPower)
 {
     updateStateMachine("Drilling");
-    setDrillPower(drillPower);
+    setDrillPower(drillPower, DRILLCCW);
     MoveTo(y, motorZ.posMin);
-    setDrillPower(0);
+    setDrillPower(0,DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
-    //motorOperationCompleteCallback();
+    // motorOperationCompleteCallback();
     updateStateMachine("Waiting");
 }
 
@@ -106,7 +106,7 @@ void checkMoveIsValid(double y, double z)
     {
         LOG_ERROR("Z movement exceeds minimum range");
     }
-    else if ((y - state.y)>1 && z < Z_SAFE)
+    else if ((y - state.y) > 1 && z < Z_SAFE)
     {
         LOG_ERROR("Y cannot be moved when Z is near or below ground");
     }

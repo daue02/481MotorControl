@@ -8,8 +8,8 @@
 
 #define MIN_RPM 5.0
 
-#define CW 0
-#define CCW 1
+#define STEPPERCW 0
+#define STEPPERCCW 1
 
 typedef struct
 {

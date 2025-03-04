@@ -22,7 +22,7 @@ Motor motorY = {
     .dirPin = GPIO_PIN_10,
     .sleepPort = GPIOB,
     .sleepPin = GPIO_PIN_4,
-    .dir = CCW,
+    .dir = STEPPERCCW,
     .stepsPerRev = 200, // 200PPR * no microstep
     .lead = 8,
     .posMin = 0,
@@ -38,7 +38,7 @@ Motor motorZ = {
     .dirPin = GPIO_PIN_10,
     .sleepPort = GPIOA,
     .sleepPin = GPIO_PIN_6,
-    .dir = CCW,
+    .dir = STEPPERCCW,
     .stepsPerRev = 200, // 200PPR
     .lead = 5,
     .posMin = -113.1, // See 2025-02-11 Electrical OneNote (ED)
@@ -108,13 +108,13 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     if (dist > 0)
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
-        motor->dir = CW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, STEPPERCW);
+        motor->dir = STEPPERCW;
     }
     else
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
-        motor->dir = CCW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, STEPPERCCW);
+        motor->dir = STEPPERCCW;
         dist = dist * -1;
     }
 
@@ -145,7 +145,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     motor->isMoving = 1;
 
     double distToComplete = motor->stepsToComplete / motor->stepsPerRev * motor->lead / 2;
-    if (motor->dir == CCW)
+    if (motor->dir == STEPPERCCW)
     {
         distToComplete = distToComplete * -1;
     }
@@ -362,13 +362,13 @@ void MoveBySpeed(Motor *motor, double speedRPM)
 
     if (speedRPM > 0)
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
-        motor->dir = CCW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, STEPPERCCW);
+        motor->dir = STEPPERCCW;
     }
     else
     {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
-        motor->dir = CW;
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, STEPPERCW);
+        motor->dir = STEPPERCW;
         speedRPM = -speedRPM; // Ensure speed is positive for calculations
     }
 
