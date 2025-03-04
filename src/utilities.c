@@ -249,33 +249,37 @@ void ErrorHandler(void)
  * @brief Changes overall LED state
  *
  * @param led LED object
- * @param ledMode Slow, Fast, Solid
+ * @param ledMode Slow, Fast, Strobe, or Solid
  */
 void changeLEDState(LED led, const char *ledMode)
 {
     // Shut off the other LED
-    if (strcmp(led.name,"greenLED") == 0)
+    if (strcmp(led.name, "greenLED") == 0)
     {
         HAL_TIM_Base_Stop_IT(&htim5);
-        HAL_GPIO_WritePin(redLED.port, redLED.pin, GPIO_PIN_RESET);        
+        HAL_GPIO_WritePin(redLED.port, redLED.pin, GPIO_PIN_RESET);
     }
     else
     {
         HAL_TIM_Base_Stop_IT(&htim5);
-        HAL_GPIO_WritePin(greenLED.port, greenLED.pin, GPIO_PIN_RESET);  
+        HAL_GPIO_WritePin(greenLED.port, greenLED.pin, GPIO_PIN_RESET);
     }
 
-    // Set this LED to slow, fast, or solid
-    if (strcmp(ledMode, "Slow") == 0 || strcmp(ledMode, "Fast") == 0)
+    // Set this LED to slow, fast, strobe, or solid
+    if (strcmp(ledMode, "Slow") == 0 || strcmp(ledMode, "Fast") == 0 || strcmp(ledMode, "Strobe") == 0)
     {
         double flashSpeed = 0;
         if (strcmp(ledMode, "Slow") == 0)
         {
             flashSpeed = 0.5; // Slow interval [s]
         }
-        else
+        else if (strcmp(ledMode, "Fast") == 0)
         {
             flashSpeed = 0.1; // Fast interval [s]
+        }
+        else
+        {
+            flashSpeed = 0.05; // Fast interval [s]
         }
         double timerPeriod = 1000000 * flashSpeed; // 1MHz clock * Speed
         activeLED.port = led.port;

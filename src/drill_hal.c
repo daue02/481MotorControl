@@ -12,20 +12,55 @@ Drill motorDrill = {
     .name = "motorDrill",
     .pwmPort = GPIOA,
     .pwmPin = GPIO_PIN_5,
-};
+    .dirPort = GPIOC,
+    .dirPin = GPIO_PIN_9,
+    .dir = DRILLCW};
 
 void Drill_Init(void)
 {
+    // Set PWM Parameters
     motorDrill.currentPower = 0;
     motorDrill.targetPower = 0;
     motorDrill.accel = 25; // % per sec
     MX_TIM2_Init();
     MX_TIM9_Init();
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, (double)htim2.Init.Period / 100 * motorDrill.currentPower);
+
+    // Set DIR parameters
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = motorDrill.dirPin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(motorDrill.dirPort, &GPIO_InitStruct);
 }
 
-void setDrillPower(int power)
+/**
+ * @brief Accelerate/Decelerate the drill to a new power
+ *
+ * @param power Power expressed as %
+ * @param dir Direction (DRILLCW or DRILLCCW)
+ */
+void setDrillPower(int power, int dir)
 {
+    // Configure direction
+    if (dir == DRILLCW)
+    {
+        HAL_GPIO_WritePin(motorDrill.dirPort, motorDrill.dirPin, DRILLCW);
+        motorDrill.dir = DRILLCW;
+    }
+    else if (dir == DRILLCCW)
+    {
+        HAL_GPIO_WritePin(motorDrill.dirPort, motorDrill.dirPin, DRILLCCW);
+        motorDrill.dir = DRILLCCW;
+    }
+    else
+    {
+        LOG_ERROR("Invalid drill direction chosen");
+        ErrorHandler();
+    }
+
+    // Configure speed
     motorDrill.targetPower = power;
 
     if (motorDrill.currentPower != motorDrill.targetPower)

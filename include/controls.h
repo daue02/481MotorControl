@@ -19,6 +19,7 @@ struct stateMachine
     bool homing;      // Currently homing                        - RED FAST
     bool waiting;     // Homed and ready for command             - GREEN SOLID
     bool positioning; // Moving above the ground                 - GREEN SLOW
+    bool manual;      // Moving w/ controller                    - GREEN STROBE
     bool drilling;    // Moving below the ground or cleaning bit - GREEN FAST
 
     double y; // Y position of end effector

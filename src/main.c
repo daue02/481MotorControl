@@ -50,25 +50,14 @@ int main(void)
         if (!commandPending)
         {
           commandPending = true;
-
-          if (1) // Automatic sequence
+          LOG_INFO("Automatic sequence activated");
+          SystemHealthCheck();
+          if (state.unhomed)
           {
-            LOG_INFO("Automatic sequence activated");
-            SystemHealthCheck();
-            if (state.unhomed)
-            {
-              HomeMotors();
-            }
-            locateWeed(weedPos);
-            removeWeed(weedPos,50);
-            motorOperationCompleteCallback();
-            updateStateMachine("Waiting");
+            HomeMotors();
           }
-          else // Manual sequence
-          {
-            LOG_INFO("Manual sequence activated");
-            // Manual mode to be added
-          }
+          locateWeed(weedPos);
+          removeWeed(weedPos, 25);
         }
         else
         {

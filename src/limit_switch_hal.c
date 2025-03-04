@@ -11,28 +11,28 @@ InterruptSwitch ySW_pos =
     {
         .name = "ySwitchPos",
         .port = GPIOB,
-        .pin = GPIO_PIN_8,
+        .pin = GPIO_PIN_9,
 };
 
 InterruptSwitch ySW_neg =
     {
         .name = "ySwitchNeg",
         .port = GPIOB,
-        .pin = GPIO_PIN_9,
+        .pin = GPIO_PIN_8,
 };
 
 InterruptSwitch zSW_pos =
     {
         .name = "zSwitchPos",
         .port = GPIOB,
-        .pin = GPIO_PIN_5,
+        .pin = GPIO_PIN_6,
 };
 
 InterruptSwitch zSW_neg =
     {
         .name = "zSwitchNeg",
         .port = GPIOB,
-        .pin = GPIO_PIN_6,
+        .pin = GPIO_PIN_5,
 };
 
 /*

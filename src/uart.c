@@ -254,7 +254,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("LEFT");
 
-            MoveBySpeed(&motorY, -motorY.positioningSpeed / motorY.lead * 60);
+            updateStateMachine("Manual");
+            MoveBySpeed(&motorY, -motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -264,7 +265,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("RIGHT");
 
-            MoveBySpeed(&motorY, motorY.positioningSpeed / motorY.lead * 60);
+            updateStateMachine("Manual");
+            MoveBySpeed(&motorY, motorY.speed / motorY.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -274,7 +276,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DOWN");
 
-            MoveBySpeed(&motorZ, motorZ.positioningSpeed / motorZ.lead * 60);
+            updateStateMachine("Manual");
+            MoveBySpeed(&motorZ, motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -284,7 +287,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("UP");
 
-            MoveBySpeed(&motorZ, -motorZ.positioningSpeed / motorZ.lead * 60);
+            updateStateMachine("Manual");
+            MoveBySpeed(&motorZ, -motorZ.speed / motorZ.lead * 60);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -294,7 +298,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
             LOG_INFO("DRILL");
 
-            setDrillPower(50);
+            updateStateMachine("Manual");
+            setDrillPower(50, DRILLCW);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -305,8 +310,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             LOG_INFO("STOP");
 
             StopMotors();
-            setDrillPower(0);
-
+            setDrillPower(0, DRILLCW);
             updateStateMachine("Unhomed");
 
             bytesReceived = 0;
