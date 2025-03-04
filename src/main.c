@@ -30,7 +30,9 @@ int main(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
 
-  // Wait for Pi to fully boot before proceeding
+  Motors_Init();
+  HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Sleep Y motor w/o initializing
+  HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Sleep Z motor w/o intializing
   while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
   {
     LOG_INFO("Waiting: %d", HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8));
@@ -40,7 +42,6 @@ int main(void)
   Drill_Init();
   Encoder_Init();
   Limit_Switch_Init();
-  Motors_Init();
   UART_Init();
   Utilities_Init();
 
