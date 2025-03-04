@@ -28,14 +28,14 @@ int main(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  Serial_Init();
 
+  // Wait for Pi to boot to avoid unintentional movement
+  Serial_Init();
   Motors_Init();
-  HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Sleep Y motor w/o initializing
-  HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Sleep Z motor w/o intializing
+  HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Unstall y motor
+  HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Unstall z motor
   while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
   {
-    LOG_INFO("Waiting: %d", HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8));
     HAL_Delay(10);
   }
 
@@ -46,7 +46,6 @@ int main(void)
   Utilities_Init();
 
   LOG_INFO("System Initialized");
-
   updateStateMachine("Unhomed");
   SystemHealthCheck();
 
