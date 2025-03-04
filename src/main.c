@@ -21,22 +21,31 @@ void SerialDemo(void);
 
 int main(void)
 {
+
   HAL_Init();
   SystemClockConfig();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  // Wait for Pi to boot to avoid unintentional movement
   Serial_Init();
+  Motors_Init();
+  HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Unstall y motor
+  HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Unstall z motor
+  while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
+  {
+    HAL_Delay(10);
+  }
+
   Drill_Init();
   Encoder_Init();
   Limit_Switch_Init();
-  Motors_Init();
   UART_Init();
   Utilities_Init();
 
   LOG_INFO("System Initialized");
-
   updateStateMachine("Unhomed");
   SystemHealthCheck();
 
