@@ -21,18 +21,6 @@ void SerialDemo(void);
 
 int main(void)
 {
-  // Wait for Pi to fully boot before proceeding
-  while (1)
-  {
-    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
-    {
-      HAL_Delay(1);
-    }
-    else
-    {
-      break;
-    }
-  }
 
   HAL_Init();
   SystemClockConfig();
@@ -41,6 +29,14 @@ int main(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   Serial_Init();
+
+  // Wait for Pi to fully boot before proceeding
+  while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_RESET)
+  {
+    LOG_INFO("Waiting: %d", HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8));
+    HAL_Delay(10);
+  }
+
   Drill_Init();
   Encoder_Init();
   Limit_Switch_Init();
