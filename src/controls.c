@@ -33,10 +33,10 @@ void removeWeed(double y, int drillPower)
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
     MoveTo(y, motorZ.posMin);
-    setDrillPower(0,DRILLCW);
+    setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
-    // motorOperationCompleteCallback();
+    motorOperationCompleteCallback();
     updateStateMachine("Waiting");
 }
 

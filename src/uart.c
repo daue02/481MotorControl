@@ -299,7 +299,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             LOG_INFO("DRILL");
 
             updateStateMachine("Manual");
-            setDrillPower(50,DRILLCW);
+            setDrillPower(50, DRILLCW);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
@@ -310,7 +310,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             LOG_INFO("STOP");
 
             StopMotors();
-            setDrillPower(0,DRILLCW);
+            setDrillPower(0, DRILLCW);
             updateStateMachine("Unhomed");
 
             bytesReceived = 0;
