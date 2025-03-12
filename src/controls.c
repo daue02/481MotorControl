@@ -18,6 +18,7 @@ void checkMoveIsValid(double y, double z);
  */
 void locateWeed(double y)
 {
+    LOG_INFO("Positining for Removal");
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
 }
@@ -30,9 +31,10 @@ void locateWeed(double y)
  */
 void removeWeed(double y, int drillPower)
 {
+    LOG_INFO("Removing Weed");
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
-    MoveTo(y, motorZ.posMin);
+    MoveTo(y, -25); // Return to min position when done
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
@@ -65,7 +67,7 @@ void MoveTo(double y, double z)
         HAL_Delay(1);
     }
 
-    PrintCartesianCoords();
+    // PrintCartesianCoords();
 }
 
 /**
