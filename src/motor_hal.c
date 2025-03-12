@@ -333,16 +333,16 @@ void HomeMotors(void)
     }
     HAL_Delay(1000);
 
-    // Move right/down by 5mm
-    MoveBy(-5, -5);
+    // Move right/down by 7.5mm
+    MoveBy(-7.5, -7.5);
     while (motorsMoving())
     {
         HAL_Delay(1);
     }
 
     // Update min position to avoid limit switch contact
-    motorY.posMax -= 6.21; // As measured for 5mm command 12-FEB-2025 ED
-    motorZ.posMax -= 7.21; // As measured for 5mm command 12-FEB-2025 ED
+    motorY.posMax -= 8.71; // As measured for 5mm command 12-FEB-2025 ED - 2.5mm 12-MAR-2025 ED
+    motorZ.posMax -= 9.71; // As measured for 5mm command 12-FEB-2025 ED - 2.5mm 12-MAR-2025 ED
 
     state.y = motorY.posMax;
     state.z = motorZ.posMax;
