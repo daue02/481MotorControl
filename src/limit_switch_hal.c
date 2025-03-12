@@ -7,41 +7,44 @@
 void EXTI9_5_IRQHandler(void);
 void Switch_Init(InterruptSwitch *interruptSW);
 
-#define LIMIT_SWITCH_DEBOUNCE_MS 20 // Tuned software debounce time
-#define DEBOUNCE_OK(last_time, now) ((now - last_time) > LIMIT_SWITCH_DEBOUNCE_MS)
+#define LIMIT_SWITCH_DEBOUNCE_MS 20
 
 InterruptSwitch ySW_pos =
-    {
-        .name = "ySwitchPos",
-        .port = GPIOB,
-        .pin = GPIO_PIN_9,
-        .lastDebounceTime = 0};
+{
+    .name = "ySwitchPos",
+    .port = GPIOB,
+    .pin = GPIO_PIN_9,
+    .lastDebounceTime = 0
+};
 
 InterruptSwitch ySW_neg =
-    {
-        .name = "ySwitchNeg",
-        .port = GPIOB,
-        .pin = GPIO_PIN_8,
-        .lastDebounceTime = 0};
+{
+    .name = "ySwitchNeg",
+    .port = GPIOB,
+    .pin = GPIO_PIN_8,
+    .lastDebounceTime = 0
+};
 
 InterruptSwitch zSW_pos =
-    {
-        .name = "zSwitchPos",
-        .port = GPIOB,
-        .pin = GPIO_PIN_6,
-        .lastDebounceTime = 0};
+{
+    .name = "zSwitchPos",
+    .port = GPIOB,
+    .pin = GPIO_PIN_6,
+    .lastDebounceTime = 0
+};
 
 InterruptSwitch zSW_neg =
-    {
-        .name = "zSwitchNeg",
-        .port = GPIOB,
-        .pin = GPIO_PIN_5,
-        .lastDebounceTime = 0};
+{
+    .name = "zSwitchNeg",
+    .port = GPIOB,
+    .pin = GPIO_PIN_5,
+    .lastDebounceTime = 0
+};
 
 /**
  * @brief Initializes the pins and state of the limit switch / pi interrupt.
  *
- * @param InterruptSwitch Interrupt switch object.
+ * @param interruptSW Interrupt switch object.
  */
 void Switch_Init(InterruptSwitch *interruptSW)
 {
@@ -57,7 +60,6 @@ void Switch_Init(InterruptSwitch *interruptSW)
 
 /**
  * @brief Initializes all the limit switches, called in main.
- *
  */
 void Limit_Switch_Init(void)
 {
@@ -72,7 +74,6 @@ void Limit_Switch_Init(void)
 
 /**
  * @brief Pins 5-9 interrupt handler, currently used for limit switches.
- *
  */
 void EXTI9_5_IRQHandler(void)
 {
@@ -87,20 +88,15 @@ void EXTI9_5_IRQHandler(void)
 
     uint32_t now = HAL_GetTick();
 
-    GPIO_PinState yPin_p_state = HAL_GPIO_ReadPin(ySW_pos.port, ySW_pos.pin);
-    GPIO_PinState yPin_n_state = HAL_GPIO_ReadPin(ySW_neg.port, ySW_neg.pin);
-    GPIO_PinState zPin_p_state = HAL_GPIO_ReadPin(zSW_pos.port, zSW_pos.pin);
-    GPIO_PinState zPin_n_state = HAL_GPIO_ReadPin(zSW_neg.port, zSW_neg.pin);
-
     // Y+
-    if (ySW_pos.Pin_state != yPin_p_state)
+    if ((now - ySW_pos.lastDebounceTime) > LIMIT_SWITCH_DEBOUNCE_MS)
     {
-        HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin); // Always clear IRQ
-
-        if (DEBOUNCE_OK(ySW_pos.lastDebounceTime, now))
+        ySW_pos.lastDebounceTime = now;
+        GPIO_PinState new_state = HAL_GPIO_ReadPin(ySW_pos.port, ySW_pos.pin);
+        if (ySW_pos.Pin_state != new_state)
         {
-            ySW_pos.lastDebounceTime = now;
-            if (yPin_p_state)
+            ySW_pos.Pin_state = new_state;
+            if (new_state)
             {
                 motorY.isMoving = 0;
                 LOG_INFO("Y+ Engaged");
@@ -110,19 +106,18 @@ void EXTI9_5_IRQHandler(void)
                 LOG_INFO("Y+ Disengaged");
             }
         }
-
-        ySW_pos.Pin_state = yPin_p_state;
     }
+    HAL_GPIO_EXTI_IRQHandler(ySW_pos.pin);
 
     // Y-
-    if (ySW_neg.Pin_state != yPin_n_state)
+    if ((now - ySW_neg.lastDebounceTime) > LIMIT_SWITCH_DEBOUNCE_MS)
     {
-        HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);
-
-        if (DEBOUNCE_OK(ySW_neg.lastDebounceTime, now))
+        ySW_neg.lastDebounceTime = now;
+        GPIO_PinState new_state = HAL_GPIO_ReadPin(ySW_neg.port, ySW_neg.pin);
+        if (ySW_neg.Pin_state != new_state)
         {
-            ySW_neg.lastDebounceTime = now;
-            if (yPin_n_state)
+            ySW_neg.Pin_state = new_state;
+            if (new_state)
             {
                 motorY.isMoving = 0;
                 LOG_INFO("Y- Engaged");
@@ -132,19 +127,18 @@ void EXTI9_5_IRQHandler(void)
                 LOG_INFO("Y- Disengaged");
             }
         }
-
-        ySW_neg.Pin_state = yPin_n_state;
     }
+    HAL_GPIO_EXTI_IRQHandler(ySW_neg.pin);
 
     // Z+
-    if (zSW_pos.Pin_state != zPin_p_state)
+    if ((now - zSW_pos.lastDebounceTime) > LIMIT_SWITCH_DEBOUNCE_MS)
     {
-        HAL_GPIO_EXTI_IRQHandler(zSW_pos.pin);
-
-        if (DEBOUNCE_OK(zSW_pos.lastDebounceTime, now))
+        zSW_pos.lastDebounceTime = now;
+        GPIO_PinState new_state = HAL_GPIO_ReadPin(zSW_pos.port, zSW_pos.pin);
+        if (zSW_pos.Pin_state != new_state)
         {
-            zSW_pos.lastDebounceTime = now;
-            if (zPin_p_state)
+            zSW_pos.Pin_state = new_state;
+            if (new_state)
             {
                 motorZ.isMoving = 0;
                 LOG_INFO("Z+ Engaged");
@@ -154,19 +148,18 @@ void EXTI9_5_IRQHandler(void)
                 LOG_INFO("Z+ Disengaged");
             }
         }
-
-        zSW_pos.Pin_state = zPin_p_state;
     }
+    HAL_GPIO_EXTI_IRQHandler(zSW_pos.pin);
 
     // Z-
-    if (zSW_neg.Pin_state != zPin_n_state)
+    if ((now - zSW_neg.lastDebounceTime) > LIMIT_SWITCH_DEBOUNCE_MS)
     {
-        HAL_GPIO_EXTI_IRQHandler(zSW_neg.pin);
-
-        if (DEBOUNCE_OK(zSW_neg.lastDebounceTime, now))
+        zSW_neg.lastDebounceTime = now;
+        GPIO_PinState new_state = HAL_GPIO_ReadPin(zSW_neg.port, zSW_neg.pin);
+        if (zSW_neg.Pin_state != new_state)
         {
-            zSW_neg.lastDebounceTime = now;
-            if (zPin_n_state)
+            zSW_neg.Pin_state = new_state;
+            if (new_state)
             {
                 motorZ.isMoving = 0;
                 LOG_INFO("Z- Engaged");
@@ -176,7 +169,6 @@ void EXTI9_5_IRQHandler(void)
                 LOG_INFO("Z- Disengaged");
             }
         }
-
-        zSW_neg.Pin_state = zPin_n_state;
     }
+    HAL_GPIO_EXTI_IRQHandler(zSW_neg.pin);
 }
