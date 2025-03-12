@@ -9,6 +9,7 @@ typedef struct
     GPIO_TypeDef *port;
     uint16_t pin;
     GPIO_PinState Pin_state;
+    uint32_t lastDebounceTime;
 } InterruptSwitch;
 
 extern InterruptSwitch ySW_neg;
