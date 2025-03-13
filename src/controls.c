@@ -18,6 +18,7 @@ void checkMoveIsValid(double y, double z);
  */
 void locateWeed(double y)
 {
+    LOG_INFO("Positining for Removal");
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
 }
@@ -30,9 +31,10 @@ void locateWeed(double y)
  */
 void removeWeed(double y, int drillPower)
 {
+    LOG_INFO("Removing Weed");
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
-    MoveTo(y, motorZ.posMin);
+    MoveTo(y, -25); // Return to min position when done
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
@@ -131,10 +133,8 @@ void PrintCartesianCoords(void)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    LOG_INFO("");
-    LOG_INFO("Current YZ Pos [mm]: ");
-    LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
-    LOG_INFO("");
+    LOG_INFO("Current YZ Pos [mm]: (%d.%d, %d.%d)",int_part, decimal_part, int_part2, decimal_part2);
+    //LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**

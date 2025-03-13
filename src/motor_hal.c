@@ -331,10 +331,17 @@ void HomeMotors(void)
     {
         HAL_Delay(1);
     }
-    HAL_Delay(1000);
+    HAL_Delay(500);
 
-    // Move right/down by 5mm
-    MoveBy(-5, -5);
+    // Back off Y by 7.5mm
+    MoveBy(-5, 0);
+    while (motorsMoving())
+    {
+        HAL_Delay(1);
+    }
+
+    // Back off Z by 7.5mm. Avoid doing both simultaneously, weird edge case
+    MoveBy(0, -5);
     while (motorsMoving())
     {
         HAL_Delay(1);

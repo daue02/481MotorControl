@@ -9,13 +9,14 @@ typedef struct
     GPIO_TypeDef *port;
     uint16_t pin;
     GPIO_PinState Pin_state;
-} InterruptSwitch;
+    uint32_t lastDebounceTime;
+} LimitSwitch;
 
-extern InterruptSwitch ySW_neg;
-extern InterruptSwitch ySW_pos;
-extern InterruptSwitch zSW_neg;
-extern InterruptSwitch zSW_pos;
-extern InterruptSwitch piSW;
+extern LimitSwitch ySW_neg;
+extern LimitSwitch ySW_pos;
+extern LimitSwitch zSW_neg;
+extern LimitSwitch zSW_pos;
+extern LimitSwitch piSW;
 
 void Limit_Switch_Init(void);
 

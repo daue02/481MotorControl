@@ -31,6 +31,7 @@ int main(void)
 
   // Wait for Pi to boot to avoid unintentional movement
   Serial_Init();
+  printf("\n\n\n\n\n"); // Readability between resets
   Motors_Init();
   HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Unstall y motor
   HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Unstall z motor
@@ -66,7 +67,7 @@ int main(void)
             HomeMotors();
           }
           locateWeed(weedPos);
-          removeWeed(weedPos, 25);
+          removeWeed(weedPos, 5);
         }
         else
         {
