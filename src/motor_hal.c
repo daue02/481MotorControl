@@ -27,6 +27,7 @@ Motor motorY = {
     .lead = 8,
     .posMin = 0,
     .posMax = 219.62, // See 2025-02-11 Electrical OneNote (ED)
+    .accelTime = 1,
     .isMoving = 0,
 };
 
@@ -43,6 +44,7 @@ Motor motorZ = {
     .lead = 5,
     .posMin = -113.1, // See 2025-02-11 Electrical OneNote (ED)
     .posMax = 93.2,   // See 2025-02-11 Electrical OneNote (ED)
+    .accelTime = 1.5,
     .isMoving = 0,
 };
 
@@ -120,7 +122,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
     motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Need to multiply by 2?
     motor->stepsToCompleteOrig = motor->stepsToComplete;
-    double accelTime = 0.25;                                                                    // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
+    double accelTime = motor->accelTime / 4;                                         // 21NOV - OFF BY A FACTOR OF 4
     double nominalTime = (double)motor->stepsToComplete / motor->stepsPerRev / speedRPM * 60.0; // Time to move at cnst speed
 
     if (accelTime * 2 > nominalTime)

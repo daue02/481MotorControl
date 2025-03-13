@@ -26,6 +26,7 @@ typedef struct
     double posMax;                // Positive limit switch position
     double posMin;                // Negative limit switch position
     double speed;                 // Steady-state speed [mm/s]
+    double accelTime;             // Time to accelerate [s]
     uint32_t stepsToComplete;     // Number of steps the motor has left to complete
     uint32_t stepsToCompleteOrig; // Number of steps the motor originally had to complete
     uint32_t accelStep;           // stepsToComplete when motor finishes accelerating
