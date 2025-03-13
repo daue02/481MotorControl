@@ -27,14 +27,38 @@ void locateWeed(double y)
  * @brief Drill out weed then retract z axis
  *
  * @param y coordinate where weed is located
- * @param drillPower % power (0-100) for drill
+ * @param mode 'drill', 'spin', or 'fake'
  */
-void removeWeed(double y, int drillPower)
+void removeWeed(double y, const char *mode)
 {
+    double drillPower = 0;
+    double z = 0;
+
+    if (strcmp(mode, "drill") == 0)
+    {
+        drillPower = 25;
+        z = motorZ.posMin;
+    }
+    else if (strcmp(mode, "spin") == 0)
+    {
+        drillPower = 25;
+        z = -10;
+    }
+    else if (strcmp(mode, "fake") == 0)
+    {
+        drillPower = 5;
+        z = -10;
+    }
+    else
+    {
+        LOG_ERROR("Invalid weed removal mode entered");
+        ErrorHandler();
+    }
+
     LOG_INFO("Removing Weed");
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
-    MoveTo(y, -25); // Return to min position when done
+    MoveTo(y, z); // Return to min position when done
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
