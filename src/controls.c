@@ -27,14 +27,38 @@ void locateWeed(double y)
  * @brief Drill out weed then retract z axis
  *
  * @param y coordinate where weed is located
- * @param drillPower % power (0-100) for drill
+ * @param mode 'drill', 'spin', or 'fake'
  */
-void removeWeed(double y, int drillPower)
+void removeWeed(double y, const char *mode)
 {
+    double drillPower = 0;
+    double z = 0;
+
+    if (strcmp(mode, "drill") == 0)
+    {
+        drillPower = 25;
+        z = motorZ.posMin;
+    }
+    else if (strcmp(mode, "spin") == 0)
+    {
+        drillPower = 25;
+        z = -10;
+    }
+    else if (strcmp(mode, "fake") == 0)
+    {
+        drillPower = 5;
+        z = -10;
+    }
+    else
+    {
+        LOG_ERROR("Invalid weed removal mode entered");
+        ErrorHandler();
+    }
+
     LOG_INFO("Removing Weed");
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
-    MoveTo(y, -25); // Return to min position when done
+    MoveTo(y, z); // Return to min position when done
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
@@ -54,8 +78,8 @@ void MoveTo(double y, double z)
 
     double deltaY = y - state.y;
     double deltaZ = z - state.z;
-    double yRPM = motorY.speed / motorY.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
-    double zRPM = motorZ.speed / motorZ.lead * 60; // Rev/min = mm/s * rev/mm * 60s/min
+    double yRPM = motorY.speed / motorY.lead * 60 * 2; // Rev/min = mm/s * rev/mm * 60s/min. Need to mult by 2 for some reason
+    double zRPM = motorZ.speed / motorZ.lead * 60 * 2; // Rev/min = mm/s * rev/mm * 60s/min. Need to mult by 2 for some reason
     deltaY = MoveByDist(&motorY, deltaY, yRPM);
     deltaZ = MoveByDist(&motorZ, deltaZ, zRPM);
     state.y += deltaY;
@@ -133,8 +157,8 @@ void PrintCartesianCoords(void)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    LOG_INFO("Current YZ Pos [mm]: (%d.%d, %d.%d)",int_part, decimal_part, int_part2, decimal_part2);
-    //LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
+    LOG_INFO("Current YZ Pos [mm]: (%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
+    // LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**
@@ -161,8 +185,8 @@ void updateStateMachine(const char *toState)
     }
     else if (strcmp(toState, "Homing") == 0)
     {
-        motorY.speed = 35;
-        motorZ.speed = 35;
+        motorY.speed = 17.5;
+        motorZ.speed = 17.5;
         changeLEDState(redLED, "Fast");
 
         state = (struct stateMachine){.homing = true, .y = state.y, .z = state.z};
@@ -177,16 +201,16 @@ void updateStateMachine(const char *toState)
     }
     else if (strcmp(toState, "Positioning") == 0)
     {
-        motorY.speed = 100;
-        motorZ.speed = 100;
+        motorY.speed = 50;
+        motorZ.speed = 50;
         changeLEDState(greenLED, "Slow");
 
         state = (struct stateMachine){.positioning = true, .y = state.y, .z = state.z};
     }
     else if (strcmp(toState, "Manual") == 0)
     {
-        motorY.speed = 100;
-        motorZ.speed = 100;
+        motorY.speed = 50;
+        motorZ.speed = 50;
         changeLEDState(greenLED, "Strobe");
 
         state = (struct stateMachine){.manual = true, .y = state.y, .z = state.z};
@@ -194,7 +218,7 @@ void updateStateMachine(const char *toState)
     else if (strcmp(toState, "Drilling") == 0)
     {
         motorY.speed = 0; // Y motion not allowed when below ground
-        motorZ.speed = 10;
+        motorZ.speed = 5;
         changeLEDState(greenLED, "Fast");
 
         state = (struct stateMachine){.drilling = true, .y = state.y, .z = state.z};

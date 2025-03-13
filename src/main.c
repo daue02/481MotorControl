@@ -67,7 +67,7 @@ int main(void)
             HomeMotors();
           }
           locateWeed(weedPos);
-          removeWeed(weedPos, 5);
+          removeWeed(weedPos, "fake");
         }
         else
         {
