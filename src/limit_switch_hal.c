@@ -5,57 +5,53 @@
 #include "drill_hal.h"
 
 void EXTI9_5_IRQHandler(void);
-void Switch_Init(InterruptSwitch *interruptSW);
+void Switch_Init(LimitSwitch *limitSW);
 
 #define LIMIT_SWITCH_DEBOUNCE_MS 20
 
-InterruptSwitch ySW_pos =
-{
-    .name = "ySwitchPos",
-    .port = GPIOB,
-    .pin = GPIO_PIN_9,
-    .lastDebounceTime = 0
-};
+LimitSwitch ySW_pos =
+    {
+        .name = "ySwitchPos",
+        .port = GPIOB,
+        .pin = GPIO_PIN_9,
+        .lastDebounceTime = 0};
 
-InterruptSwitch ySW_neg =
-{
-    .name = "ySwitchNeg",
-    .port = GPIOB,
-    .pin = GPIO_PIN_8,
-    .lastDebounceTime = 0
-};
+LimitSwitch ySW_neg =
+    {
+        .name = "ySwitchNeg",
+        .port = GPIOB,
+        .pin = GPIO_PIN_8,
+        .lastDebounceTime = 0};
 
-InterruptSwitch zSW_pos =
-{
-    .name = "zSwitchPos",
-    .port = GPIOB,
-    .pin = GPIO_PIN_6,
-    .lastDebounceTime = 0
-};
+LimitSwitch zSW_pos =
+    {
+        .name = "zSwitchPos",
+        .port = GPIOB,
+        .pin = GPIO_PIN_6,
+        .lastDebounceTime = 0};
 
-InterruptSwitch zSW_neg =
-{
-    .name = "zSwitchNeg",
-    .port = GPIOB,
-    .pin = GPIO_PIN_5,
-    .lastDebounceTime = 0
-};
+LimitSwitch zSW_neg =
+    {
+        .name = "zSwitchNeg",
+        .port = GPIOB,
+        .pin = GPIO_PIN_5,
+        .lastDebounceTime = 0};
 
 /**
- * @brief Initializes the pins and state of the limit switch / pi interrupt.
+ * @brief Initializes the pins and state of the limit switch
  *
- * @param interruptSW Interrupt switch object.
+ * @param limitSW Interrupt switch object.
  */
-void Switch_Init(InterruptSwitch *interruptSW)
+void Switch_Init(LimitSwitch *limitSW)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    GPIO_InitStruct.Pin = interruptSW->pin;
+    GPIO_InitStruct.Pin = limitSW->pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(interruptSW->port, &GPIO_InitStruct);
+    HAL_GPIO_Init(limitSW->port, &GPIO_InitStruct);
 
-    interruptSW->Pin_state = HAL_GPIO_ReadPin(interruptSW->port, interruptSW->pin);
+    limitSW->Pin_state = HAL_GPIO_ReadPin(limitSW->port, limitSW->pin);
 }
 
 /**
