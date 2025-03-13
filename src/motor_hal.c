@@ -118,7 +118,7 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
         dist = dist * -1;
     }
 
-    motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Divide by 2, since each interrupt is a toggle
+    motor->stepsToComplete = (uint32_t)(dist / motor->lead * motor->stepsPerRev * 2); // Need to multiply by 2?
     motor->stepsToCompleteOrig = motor->stepsToComplete;
     double accelTime = 0.25;                                                                    // Time to accelerate/decelerate in seconds - 21NOV - OFF BY A FACTOR OF 4
     double nominalTime = (double)motor->stepsToComplete / motor->stepsPerRev / speedRPM * 60.0; // Time to move at cnst speed
