@@ -67,7 +67,7 @@ void MoveTo(double y, double z)
         HAL_Delay(1);
     }
 
-    // PrintCartesianCoords();
+    PrintCartesianCoords();
 }
 
 /**
@@ -133,10 +133,8 @@ void PrintCartesianCoords(void)
     int int_part2 = (int)z;
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
-    LOG_INFO("");
-    LOG_INFO("Current YZ Pos [mm]: ");
-    LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
-    LOG_INFO("");
+    LOG_INFO("Current YZ Pos [mm]: (%d.%d, %d.%d)",int_part, decimal_part, int_part2, decimal_part2);
+    //LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**

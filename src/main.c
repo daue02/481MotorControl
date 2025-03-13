@@ -31,7 +31,7 @@ int main(void)
 
   // Wait for Pi to boot to avoid unintentional movement
   Serial_Init();
-  LOG_INFO("\n\n\n\n\n\n\n");
+  LOG_INFO("\n\n\n\n\n"); // Readability between resets
   Motors_Init();
   HAL_GPIO_WritePin(motorY.sleepPort, motorY.sleepPin, GPIO_PIN_RESET); // Unstall y motor
   HAL_GPIO_WritePin(motorZ.sleepPort, motorZ.sleepPin, GPIO_PIN_RESET); // Unstall z motor
