@@ -9,7 +9,7 @@ extern volatile bool commandPending;
 void UART_Init();
 bool receiveCommand(uint16_t *weedPos);
 void motorOperationCompleteCallback(void);
-void sendTicks(int16_t ticks1, int16_t ticks2);
+void sendTicks(uint16_t ticks1, uint16_t ticks2);
 
 /*
     Notes about using this module:

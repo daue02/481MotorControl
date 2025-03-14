@@ -122,7 +122,7 @@ bool receiveCommand(uint16_t *weedPos)
  * @param ticks1 The tick value for the first encoder.
  * @param ticks2 The tick value for the second encoder.
  */
-void sendTicks(int16_t ticks1, int16_t ticks2)
+void sendTicks(uint16_t ticks1, uint16_t ticks2)
 {
     // Prepare the buffer
     ticksBuffer[0] = 0xAE; // Start byte
@@ -224,7 +224,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // Single-byte request for encoder data
         if (tempBuffer[0] == TICKS_BYTE && bytesReceived == 1)
         {
-            int16_t ticks1, ticks2;
+            uint16_t ticks1, ticks2;
             getTicks(&ticks1, &ticks2);
             sendTicks(ticks1, ticks2);
 

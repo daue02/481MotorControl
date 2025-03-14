@@ -152,10 +152,10 @@ void TIM1_UP_TIM10_IRQHandler(void)
  * This function reads the current counter values of TIM1 and TIM8 and stores them in the provided
  * integer pointers. These values represent the tick counts of the respective encoders.
  */
-void getTicks(int16_t *ticks1, int16_t *ticks2)
+void getTicks(uint16_t *ticks1, uint16_t *ticks2)
 {
-    *ticks1 = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
-    *ticks2 = (int16_t)__HAL_TIM_GET_COUNTER(&htim8);
+    *ticks1 = (uint16_t)__HAL_TIM_GET_COUNTER(&htim1);
+    *ticks2 = (uint16_t)__HAL_TIM_GET_COUNTER(&htim8);
 }
 
 void stopTicksTimer(void)
