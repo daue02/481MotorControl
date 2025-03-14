@@ -63,6 +63,13 @@ void removeWeed(double y, const char *mode)
     updateStateMachine("Positioning");
     MoveTo(y, Z_SAFE);
     motorOperationCompleteCallback();
+    HAL_Delay(100);
+    while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) != GPIO_PIN_RESET)
+    {
+        motorOperationCompleteCallback();
+        HAL_Delay(100);
+    }
+
     updateStateMachine("Waiting");
 }
 
