@@ -4,7 +4,7 @@
 #include "main.h"
 
 extern volatile bool rxReady;
-extern volatile bool commandPending;
+extern bool commandPending;
 
 void UART_Init();
 bool receiveCommand(uint16_t *weedPos);

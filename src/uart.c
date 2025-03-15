@@ -30,7 +30,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 
 volatile bool rxReady = false;
-volatile bool commandPending = false;
+bool commandPending = false;
 uint8_t rxBuffer[RX_BUFFER_SIZE];
 uint8_t ticksBuffer[TICK_BUF_SIZE];
 uint8_t batBuffer[BAT_BUF_SIZE];

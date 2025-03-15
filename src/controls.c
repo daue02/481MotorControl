@@ -47,7 +47,7 @@ void removeWeed(double y, const char *mode)
     else if (strcmp(mode, "fake") == 0)
     {
         drillPower = 5;
-        z = -10;
+        z = 0;
     }
     else
     {
@@ -61,14 +61,19 @@ void removeWeed(double y, const char *mode)
     MoveTo(y, z); // Return to min position when done
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
-    MoveTo(y, Z_SAFE);
+    MoveTo(y, 85);
+
+    // hack
     motorOperationCompleteCallback();
     HAL_Delay(100);
-    while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) != GPIO_PIN_RESET)
-    {
-        motorOperationCompleteCallback();
-        HAL_Delay(100);
-    }
+    motorOperationCompleteCallback();
+    HAL_Delay(100);
+    motorOperationCompleteCallback();
+    // while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) != GPIO_PIN_RESET)
+    // {
+    //     motorOperationCompleteCallback();
+    //     HAL_Delay(100);
+    // }
 
     updateStateMachine("Waiting");
 }
