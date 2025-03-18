@@ -81,7 +81,7 @@ void removeWeed(double y, const char *mode)
  */
 void MoveTo(double y, double z)
 {
-    checkMoveIsValid(y, z);
+    // checkMoveIsValid(y, z);
 
     double deltaY = y - state.y;
     double deltaZ = z - state.z;

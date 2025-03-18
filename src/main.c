@@ -19,8 +19,9 @@ double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 
-#define TEST_1 // Radial Accuracy Test
-#define TEST_2 // Penetration Depth Test
+// #define TEST_1 // Radial Accuracy Test
+// #define TEST_2 // Penetration Depth Test
+#define HOMO_CAL // Homography calibration routine
 
 int main(void)
 {
@@ -99,6 +100,24 @@ int main(void)
           MoveTo(weedPos, 25);
           LOG_INFO("Movement complete - Please measure hole depth on drill bit");
           // Not calling the motor callback prevents Pi from taking over
+#endif
+
+// Homography calibration
+#ifdef HOMO_CAL
+          LOG_INFO("Homography Calibration Routine Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 5);
+          updateStateMachine("Waiting");
+          LOG_INFO("Reset Nucleo when complete");
+          while (1)
+          {
+            HAL_Delay(1);
+          }
 #endif
 
           LOG_INFO("Automatic sequence activated");
