@@ -19,6 +19,9 @@ double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 
+#define TEST_1 // Radial Accuracy Test
+#define TEST_2 // Penetration Depth Test
+
 int main(void)
 {
 
@@ -50,6 +53,11 @@ int main(void)
   updateStateMachine("Unhomed");
   SystemHealthCheck();
 
+// Penetration Depth Test
+#ifdef TEST_2
+
+#endif
+
   while (1)
   {
     if (rxReady)
@@ -59,6 +67,20 @@ int main(void)
       {
         if (!commandPending)
         {
+// Radial Accuracy Test
+#ifdef TEST_1
+          LOG_INFO("Radial Accuray Test Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 10);
+          LOG_INFO("Test Complete - Please Actuate E-Stop");
+          updateStateMachine("Waiting");
+#endif
+
           commandPending = true;
           LOG_INFO("Automatic sequence activated");
           SystemHealthCheck();
