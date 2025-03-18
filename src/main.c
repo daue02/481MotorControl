@@ -53,11 +53,6 @@ int main(void)
   updateStateMachine("Unhomed");
   SystemHealthCheck();
 
-// Penetration Depth Test
-#ifdef TEST_2
-
-#endif
-
   while (1)
   {
     if (rxReady)
@@ -67,9 +62,11 @@ int main(void)
       {
         if (!commandPending)
         {
+          commandPending = true;
+
 // Radial Accuracy Test
 #ifdef TEST_1
-          LOG_INFO("Radial Accuray Test Activated");
+          LOG_INFO("Radial Accuracy Test Activated");
           SystemHealthCheck();
           if (state.unhomed)
           {
@@ -77,11 +74,33 @@ int main(void)
           }
           updateStateMachine("Positioning");
           MoveTo(weedPos, 10);
-          LOG_INFO("Test Complete - Please Actuate E-Stop");
+          LOG_INFO("Movement complete - Please measure accuracy");
           updateStateMachine("Waiting");
+          // Not calling the motor callback prevents Pi from taking over
 #endif
 
-          commandPending = true;
+// Penetration Depth Test
+#ifdef TEST_2
+          LOG_INFO("Penetration Depth Test Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          locateWeed(weedPos);
+          updateStateMachine("Drilling");
+          setDrillPower(50, DRILLCW); // Tweak drill power as required
+          MoveTo(weedPos, motorZ.posMin);
+          setDrillPower(0, DRILLCW);
+          updateStateMachine("Waiting");
+          LOG_INFO("Mark location on drillbit for measurement - In the next 15 seconds");
+          HAL_Delay(15000);
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 25);
+          LOG_INFO("Movement complete - Please measure hole depth on drill bit");
+          // Not calling the motor callback prevents Pi from taking over
+#endif
+
           LOG_INFO("Automatic sequence activated");
           SystemHealthCheck();
           if (state.unhomed)
