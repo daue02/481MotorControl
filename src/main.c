@@ -1,11 +1,11 @@
-#include "main.h"
-#include "utilities.h"
 #include "controls.h"
 #include "drill_hal.h"
 #include "encoder_hal.h"
 #include "limit_switch_hal.h"
+#include "main.h"
 #include "motor_hal.h"
 #include "uart.h"
+#include "utilities.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
@@ -19,7 +19,8 @@ double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 
-#define TEST_1 // Radial Accuracy Test
+// Macros for test plans and calibrations
+// #define TEST_1 // Radial Accuracy Test
 // #define TEST_2 // Penetration Depth Test
 // #define HOMO_CAL // Homography calibration routine
 
