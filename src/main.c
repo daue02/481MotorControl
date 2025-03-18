@@ -21,7 +21,7 @@ void SerialDemo(void);
 
 // #define TEST_1 // Radial Accuracy Test
 // #define TEST_2 // Penetration Depth Test
-#define HOMO_CAL // Homography calibration routine
+// #define HOMO_CAL // Homography calibration routine
 
 int main(void)
 {
@@ -111,7 +111,7 @@ int main(void)
             HomeMotors();
           }
           updateStateMachine("Positioning");
-          MoveTo(weedPos, 5);
+          MoveTo(weedPos, 0);
           updateStateMachine("Waiting");
           LOG_INFO("Reset Nucleo when complete");
           while (1)
