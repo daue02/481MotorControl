@@ -139,10 +139,6 @@ void checkMoveIsValid(double y, double z)
     {
         LOG_ERROR("Z movement exceeds minimum range");
     }
-    else if ((y - state.y) > 1 && z < Z_SAFE)
-    {
-        LOG_ERROR("Y cannot be moved when Z is near or below ground");
-    }
     else
     {
         return;

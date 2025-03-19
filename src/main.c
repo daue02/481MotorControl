@@ -20,8 +20,8 @@ void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
 
 // Macros for test plans and calibrations
-// #define TEST_1 // Radial Accuracy Test
-// #define TEST_2 // Penetration Depth Test
+// #define TEST_1   // Radial Accuracy Test
+// #define TEST_2   // Penetration Depth Test
 // #define HOMO_CAL // Homography calibration routine
 
 int main(void)
