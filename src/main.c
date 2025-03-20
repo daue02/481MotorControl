@@ -280,38 +280,3 @@ double ReceiveFloat(void)
 
   return receivedFloat;
 }
-
-/**
- * @brief Halts program execution and asks user to input an x and a y coordinate.
- *
- * @param y pointer to y coordinate [mm]
- * @param z pointer to z cordinate [mm]
- */
-void RecieveCoordinates(double *y, double *z)
-{
-  LOG_INFO("Enter desired Y coordinate [mm]: ");
-  *y = ReceiveFloat();
-  LOG_INFO("");
-  LOG_INFO("Enter desired Z coordinate [mm]: ");
-  *z = ReceiveFloat();
-  LOG_INFO("");
-}
-
-/**
- * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
- *
- */
-void SerialDemo(void)
-{
-  LOG_INFO("---------- Entered Serial Demo ----------");
-  while (1)
-  {
-    double y = 0, z = 0;
-    RecieveCoordinates(&y, &z);
-    MoveTo(y, z);
-    while (motorsMoving())
-    {
-      HAL_Delay(1); // Prevent user from sending another request while still moving
-    }
-  }
-}

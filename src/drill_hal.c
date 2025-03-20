@@ -9,7 +9,6 @@ static void MX_TIM9_Init(void);
 static void Drill_TimerCallback(void);
 
 Drill motorDrill = {
-    .name = "motorDrill",
     .pwmPort = GPIOA,
     .pwmPin = GPIO_PIN_5,
     .dirPort = GPIOC,
