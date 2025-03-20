@@ -11,7 +11,6 @@
 
 typedef struct
 {
-    const char *name;
     GPIO_TypeDef *pwmPort;
     uint16_t pwmPin;
     GPIO_TypeDef *dirPort;

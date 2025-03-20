@@ -5,9 +5,6 @@
 #include "uart.h"
 #include "utilities.h"
 
-// Define common intermediate locations
-#define Z_SAFE 25
-
 void MoveTo(double y, double z);
 void checkMoveIsValid(double y, double z);
 
@@ -20,7 +17,7 @@ void locateWeed(double y)
 {
     LOG_INFO("Positining for Removal");
     updateStateMachine("Positioning");
-    MoveTo(y, Z_SAFE);
+    MoveTo(y, 25);
 }
 
 /**
@@ -58,7 +55,7 @@ void removeWeed(double y, const char *mode)
     LOG_INFO("Removing Weed");
     updateStateMachine("Drilling");
     setDrillPower(drillPower, DRILLCCW);
-    MoveTo(y, z); // Return to min position when done
+    MoveTo(y, z);
     setDrillPower(0, DRILLCW);
     updateStateMachine("Positioning");
     MoveTo(y, 85);
@@ -74,7 +71,7 @@ void removeWeed(double y, const char *mode)
 }
 
 /**
- * @brief Move the robot to the x and y coordinates.
+ * @brief Move the robot to absoulte (x,y) coordinates
  *
  * @param y coordniate.
  * @param z coordinate.
@@ -102,7 +99,7 @@ void MoveTo(double y, double z)
 }
 
 /**
- * @brief Increment the robots current position.
+ * @brief Move the robot by relative (x,y) coordinates
  *
  * @param rel_y y increment.
  * @param rel_z z increment
@@ -116,7 +113,7 @@ void MoveBy(double rel_y, double rel_z)
 }
 
 /**
- * @brief Checks the requested move is valid/safe
+ * @brief Checks the requested move is within YZ bounds
  *
  * @param y coordniate.
  * @param z coordinate.
@@ -138,10 +135,6 @@ void checkMoveIsValid(double y, double z)
     else if (z < motorZ.posMin)
     {
         LOG_ERROR("Z movement exceeds minimum range");
-    }
-    else if ((y - state.y) > 1 && z < Z_SAFE)
-    {
-        LOG_ERROR("Y cannot be moved when Z is near or below ground");
     }
     else
     {
@@ -165,12 +158,11 @@ void PrintCartesianCoords(void)
     int decimal_part2 = abs((int)((z - int_part2) * 1000)); // 3 decimal places
 
     LOG_INFO("Current YZ Pos [mm]: (%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
-    // LOG_INFO("(%d.%d, %d.%d)", int_part, decimal_part, int_part2, decimal_part2);
 }
 
 /**
  *
- * @param toState to: Faulted, Unhomed, Homing, Waiting, Moving, Drilling
+ * @param toState to: Faulted, Unhomed, Homing, Waiting, Positining, Manual, Drilling
  */
 void updateStateMachine(const char *toState)
 {

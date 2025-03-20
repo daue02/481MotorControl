@@ -1,11 +1,11 @@
-#include "main.h"
-#include "utilities.h"
 #include "controls.h"
 #include "drill_hal.h"
 #include "encoder_hal.h"
 #include "limit_switch_hal.h"
+#include "main.h"
 #include "motor_hal.h"
 #include "uart.h"
+#include "utilities.h"
 
 #define INPUT_BUFFER_SIZE 32 // Serial reads
 
@@ -18,6 +18,11 @@ void Serial_Init(void);
 double ReceiveFloat(void);
 void RecieveCoordinates(double *y, double *z);
 void SerialDemo(void);
+
+// Macros for test plans and calibrations
+// #define TEST_1   // Radial Accuracy Test
+// #define TEST_2   // Penetration Depth Test
+// #define HOMO_CAL // Homography calibration routine
 
 int main(void)
 {
@@ -60,6 +65,68 @@ int main(void)
         if (!commandPending)
         {
           commandPending = true;
+
+// Radial Accuracy Test
+#ifdef TEST_1
+          LOG_INFO("Radial Accuracy Test Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 5);
+          LOG_INFO("Movement complete - Please measure accuracy");
+          updateStateMachine("Waiting");
+          while (1)
+          {
+            HAL_Delay(1);
+          }
+#endif
+
+// Penetration Depth Test
+#ifdef TEST_2
+          LOG_INFO("Penetration Depth Test Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          locateWeed(weedPos);
+          updateStateMachine("Drilling");
+          setDrillPower(50, DRILLCW); // Tweak drill power as required
+          MoveTo(weedPos, motorZ.posMin);
+          setDrillPower(0, DRILLCW);
+          updateStateMachine("Waiting");
+          LOG_INFO("Mark location on drillbit for measurement - In the next 15 seconds");
+          HAL_Delay(15000);
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 25);
+          LOG_INFO("Movement complete - Please measure hole depth on drill bit");
+          while (1)
+          {
+            HAL_Delay(1);
+          }
+#endif
+
+// Homography calibration
+#ifdef HOMO_CAL
+          LOG_INFO("Homography Calibration Routine Activated");
+          SystemHealthCheck();
+          if (state.unhomed)
+          {
+            HomeMotors();
+          }
+          updateStateMachine("Positioning");
+          MoveTo(weedPos, 0);
+          updateStateMachine("Waiting");
+          LOG_INFO("Reset Nucleo when complete");
+          while (1)
+          {
+            HAL_Delay(1);
+          }
+#endif
+
           LOG_INFO("Automatic sequence activated");
           SystemHealthCheck();
           if (state.unhomed)
@@ -212,39 +279,4 @@ double ReceiveFloat(void)
   receivedFloat = atof(inputBuffer);
 
   return receivedFloat;
-}
-
-/**
- * @brief Halts program execution and asks user to input an x and a y coordinate.
- *
- * @param y pointer to y coordinate [mm]
- * @param z pointer to z cordinate [mm]
- */
-void RecieveCoordinates(double *y, double *z)
-{
-  LOG_INFO("Enter desired Y coordinate [mm]: ");
-  *y = ReceiveFloat();
-  LOG_INFO("");
-  LOG_INFO("Enter desired Z coordinate [mm]: ");
-  *z = ReceiveFloat();
-  LOG_INFO("");
-}
-
-/**
- * @brief Runs a demo which allows the user to send the robot y and z position commands and move the motors.
- *
- */
-void SerialDemo(void)
-{
-  LOG_INFO("---------- Entered Serial Demo ----------");
-  while (1)
-  {
-    double y = 0, z = 0;
-    RecieveCoordinates(&y, &z);
-    MoveTo(y, z);
-    while (motorsMoving())
-    {
-      HAL_Delay(1); // Prevent user from sending another request while still moving
-    }
-  }
 }

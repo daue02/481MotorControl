@@ -12,7 +12,6 @@ void TIM5_IRQHandler(void);
 
 Battery bat =
     {
-        .name = "Battery",
         .adcPort = GPIOC,
         .adcPin = GPIO_PIN_1,
         .adcChannel = ADC_CHANNEL_11,
@@ -126,7 +125,7 @@ void Utilities_Init(void)
 }
 
 /**
- * @brief Returns current battery voltage. Runs at start of code, and everytime the state is changed
+ * @brief Returns current battery voltage
  *
  * @param bat Battery object
  * @return Battery voltage as a float
@@ -144,7 +143,6 @@ float readBatteryVoltage(Battery *bat)
         {
             totalAdcValue += HAL_ADC_GetValue(&hadc1);
         }
-        // HAL_Delay(1); # This delay locks up when called from an isr, seems to work without
     }
 
     float adcValue = totalAdcValue / (float)numSamples;
@@ -300,6 +298,9 @@ void changeLEDState(LED led, const char *ledMode)
     }
 }
 
+/**
+ * @brief Initialize LED timer
+ */
 static void TIM5_Init(void)
 {
     __HAL_RCC_TIM5_CLK_ENABLE();
@@ -315,6 +316,9 @@ static void TIM5_Init(void)
     HAL_NVIC_EnableIRQ(TIM5_IRQn);
 }
 
+/**
+ * @brief Actuate LED
+ */
 void TIM5_IRQHandler(void)
 {
     if (__HAL_TIM_GET_FLAG(&htim5, TIM_FLAG_UPDATE) != RESET)
