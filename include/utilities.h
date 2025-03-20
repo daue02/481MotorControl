@@ -7,7 +7,6 @@
 
 typedef struct
 {
-    const char *name;
     GPIO_TypeDef *adcPort;
     uint16_t adcPin;
     uint16_t adcChannel;

@@ -97,7 +97,7 @@ void Motors_Init(void)
 }
 
 /**
- * @brief Move the specified motor.
+ * @brief Move the specified motor by a given distance.
  *
  * @param motor Motor to move
  * @param dist Requested move [mm]
@@ -132,16 +132,6 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     motor->accelStep = motor->stepsToComplete - speedRPM * motor->stepsPerRev / 60 * accelTime; // Remaining steps when acceleration is complete
     motor->decelStep = speedRPM * motor->stepsPerRev / 60 * accelTime;                          // Remaining steps when deceleration begins
 
-    // if (motor->name == motorY.name)
-    // {
-    //     LOG_INFO("Steps to Complete: %d", motor->stepsToComplete);
-    //     LOG_INFO("stepsPerRev: %d", (int)motor->stepsPerRev);
-    //     LOG_INFO("speedRPM: %d", (int)speedRPM);
-    //     LOG_INFO("Nominal Time: %d", (int)nominalTime);
-    //     LOG_INFO("Accel Step: %d", (int)motor->accelStep);
-    //     LOG_INFO("Decel Step: %d", (int)motor->decelStep);
-    // }
-
     motor->targetRPM = speedRPM;
     uint32_t timerPeriod = CalculateMotorSpeed(motor);
     motor->isMoving = 1;
@@ -156,19 +146,11 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim3);
-        // while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY)
-        // {
-        //     // Wait for the timer to be fully initialized. Fixed 2024-10-23
-        // }
     }
     else if (motor->name == motorZ.name)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
         HAL_TIM_Base_Start_IT(&htim4);
-        // while (HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
-        // {
-        //     // Wait for the timer to be fully initialized. Fixed 2024-10-23
-        // }
     }
 
     while (HAL_TIM_Base_GetState(&htim3) != HAL_TIM_STATE_READY && HAL_TIM_Base_GetState(&htim4) != HAL_TIM_STATE_READY)
@@ -179,6 +161,11 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
     return distToComplete;
 }
 
+/**
+ * @brief Perform a single step on the chosen motor
+ *
+ * @param motor Motor to move
+ */
 void StepMotor(Motor *motor)
 {
     if (!motor->stepsToComplete || !motor->isMoving)
@@ -199,6 +186,9 @@ void StepMotor(Motor *motor)
     motor->stepsToComplete--;
 }
 
+/**
+ * @brief Initialize timer 3 (For Y motor)
+ */
 static void TIM3_Init(void)
 {
     __HAL_RCC_TIM3_CLK_ENABLE();
@@ -213,6 +203,9 @@ static void TIM3_Init(void)
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 
+/**
+ * @brief Trigger StepMotor() function at given interval to move Y motor at desired RPM
+ */
 void TIM3_IRQHandler(void)
 {
     if (__HAL_TIM_GET_FLAG(&htim3, TIM_FLAG_UPDATE) != RESET)
@@ -227,6 +220,9 @@ void TIM3_IRQHandler(void)
     }
 }
 
+/**
+ * @brief Initialize timer 4 (For Z motor)
+ */
 static void TIM4_Init(void)
 {
     __HAL_RCC_TIM4_CLK_ENABLE();
@@ -242,6 +238,9 @@ static void TIM4_Init(void)
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
 }
 
+/**
+ * @brief Trigger StepMotor() function at given interval to move Z motor at desired RPM
+ */
 void TIM4_IRQHandler(void)
 {
     if (__HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_UPDATE) != RESET)
@@ -257,10 +256,10 @@ void TIM4_IRQHandler(void)
 }
 
 /**
- * @brief Motor acceleration / deceleration copntrol
+ * @brief Calculate timer period for speed/accel/decel control
  *
  * @param motor Motor to move
- * @return current timer period to achieve accel/decel/RPM
+ * @return current timer period to achieve cnst/accel/decel RPM
  */
 uint32_t CalculateMotorSpeed(Motor *motor)
 {
@@ -335,21 +334,21 @@ void HomeMotors(void)
     }
     HAL_Delay(500);
 
-    // Back off Y by 7.5mm
+    // Back off Y by 5 mm
     MoveBy(-5, 0);
     while (motorsMoving())
     {
         HAL_Delay(1);
     }
 
-    // Back off Z by 7.5mm. Avoid doing both simultaneously, weird edge case
+    // Back off Z by 5 mm. Avoid doing both simultaneously, weird edge case with limit switches
     MoveBy(0, -5);
     while (motorsMoving())
     {
         HAL_Delay(1);
     }
 
-    // Update min position to avoid limit switch contact
+    // Update min position to avoid limit switch contact in auto
     motorY.posMax -= 6.21; // As measured for 5mm command 12-FEB-2025 ED
     motorZ.posMax -= 7.21; // As measured for 5mm command 12-FEB-2025 ED
 
@@ -360,14 +359,14 @@ void HomeMotors(void)
 }
 
 /**
- * @brief Moves the motor at a given speed indefinitely until stopped.
+ * @brief Moves the motor at a given speed indefinitely until stopped. For manual control
  *
  * @param motor Motor to move
  * @param speedRPM Speed in RPM
  */
 void MoveBySpeed(Motor *motor, double speedRPM)
 {
-    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1);
+    HAL_GPIO_WritePin(motor->sleepPort, motor->sleepPin, 1); // Must manually un-sleep motor
 
     if (speedRPM > 0)
     {

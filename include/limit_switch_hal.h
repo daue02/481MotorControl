@@ -5,7 +5,6 @@
 
 typedef struct
 {
-    const char *name;
     GPIO_TypeDef *port;
     uint16_t pin;
     GPIO_PinState Pin_state;
@@ -16,7 +15,6 @@ extern LimitSwitch ySW_neg;
 extern LimitSwitch ySW_pos;
 extern LimitSwitch zSW_neg;
 extern LimitSwitch zSW_pos;
-extern LimitSwitch piSW;
 
 void Limit_Switch_Init(void);
 

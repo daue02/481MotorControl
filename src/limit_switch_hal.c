@@ -7,38 +7,34 @@
 void EXTI9_5_IRQHandler(void);
 void Switch_Init(LimitSwitch *limitSW);
 
-#define LIMIT_SWITCH_DEBOUNCE_MS 20
+#define LIMIT_SWITCH_DEBOUNCE_MS 20 // Hardware db designed @ 20 ms
 
 LimitSwitch ySW_pos =
     {
-        .name = "ySwitchPos",
         .port = GPIOB,
         .pin = GPIO_PIN_9,
         .lastDebounceTime = 0};
 
 LimitSwitch ySW_neg =
     {
-        .name = "ySwitchNeg",
         .port = GPIOB,
         .pin = GPIO_PIN_8,
         .lastDebounceTime = 0};
 
 LimitSwitch zSW_pos =
     {
-        .name = "zSwitchPos",
         .port = GPIOB,
         .pin = GPIO_PIN_6,
         .lastDebounceTime = 0};
 
 LimitSwitch zSW_neg =
     {
-        .name = "zSwitchNeg",
         .port = GPIOB,
         .pin = GPIO_PIN_5,
         .lastDebounceTime = 0};
 
 /**
- * @brief Initializes the pins and state of the limit switch
+ * @brief Initializes the pins and state of a limit switch
  *
  * @param limitSW Interrupt switch object.
  */
@@ -69,7 +65,7 @@ void Limit_Switch_Init(void)
 }
 
 /**
- * @brief Pins 5-9 interrupt handler, currently used for limit switches.
+ * @brief Handle the case of a limit swtcih trigger
  */
 void EXTI9_5_IRQHandler(void)
 {
