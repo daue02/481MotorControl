@@ -299,7 +299,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             LOG_INFO("DRILL");
 
             updateStateMachine("Manual");
-            setDrillPower(50, DRILLCW);
+            setDrillPower(5, DRILLCW);
             bytesReceived = 0;
             HAL_UART_Receive_IT(&huart5, rxBuffer, 1);
             return;
